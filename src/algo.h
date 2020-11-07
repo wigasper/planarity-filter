@@ -99,5 +99,3 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
         add_edge(adj_list, edge.first, edge.second);
     }
 }
-
-adjacency_list
