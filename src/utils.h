@@ -5,6 +5,7 @@
 #include <fstream>
 #include <tuple>
 #include <algorithm>
+#include <unordered_set>
 
 #include "boost/log/core.hpp"
 #include "boost/log/expressions.hpp"
@@ -124,11 +125,8 @@ void add_node(adjacency_list &adj_list, const node key_node) {
 // currently will panic if the adj_list does not already have the
 // nodes as keys. maybe checking here but this will slow things down
 void add_edge(adjacency_list &adj_list, const std::pair<node, node> edge) {
-    node node_0 = std::get<0>(edge);
-    node node_1 = std::get<1>(edge);
-
-    adj_list.at(node_0).push_back(node_1);
-    adj_list.at(node_1).push_back(node_0);
+    adj_list.at(edge.first).push_back(edge.second);
+    adj_list.at(edge.first).push_back(edge.second);
 }
 
 // this could also just be accomplished by using unordered_sets instead of
@@ -181,8 +179,8 @@ edge_list to_edge_list(const adjacency_list &adj_list) {
 }
 
 bool boyer_myrvold_test(const adjacency_list &adj_list) {
-    edge_list edges = to_edge_list(adj_list);
-    size_t n_nodes = adj_list.size();
+    const edge_list edges = to_edge_list(adj_list);
+    const size_t n_nodes = adj_list.size();
     boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS> boost_graph(n_nodes);
 
     for (std::pair<node, node> edge : edges) {
@@ -191,3 +189,88 @@ bool boyer_myrvold_test(const adjacency_list &adj_list) {
 
     return boyer_myrvold_planarity_test(boost_graph);
 }
+
+// returns the first node of maximum degree found
+node get_max_degree_node(const adjacency_list &adj_list) {
+    size_t max_deg = 0;
+    // TODO this is bad should probably be properly initialized w/ a value
+    node max_deg_node;
+
+    for (auto &[key_node, adjs] : adj_list) {
+        if (adjs.size() > max_deg) {
+            max_deg = adjs.size();
+            max_deg_node = key_node;
+        }
+    }
+    return max_deg_node;
+}
+
+// returns the first node of maximum degree found
+node get_max_degree_node(const std::unordered_set<node> &node_set, const adjacency_list &adj_list) {
+    size_t max_deg = 0;
+    // TODO this is bad should probably be properly initialized w/ a value
+    node max_deg_node;
+
+    for (node this_node : node_set) {
+        std::vector<node> adjs = adj_list.at(this_node);
+        if (adjs.size() > max_deg) {
+            max_deg = adjs.size();
+            max_deg_node = key_node;
+        }
+    }
+    return max_deg_node;
+}
+
+// use BFS to get all nodes dist hops or more away
+// maybe this should be in algo.h
+std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
+                                    const adjancency_list &adj_list) {
+    std::unordered_set<node> nodes_out;
+
+    std::deque<node> queue;
+    std::unordered_set<node> visited;
+    size_t current_dist = 0;
+
+    queue.push_back(source);
+
+    while (!queue.empty()) {
+        size_t queue_len = queue.size();
+        current_dist++;
+
+        for (size_t _idx = 0; _idx < queue_len; _idx++) {
+            node current_node = queue.front();
+            queue.pop_front();
+
+            auto search = visited.find(current_node);
+            if (search == visited.end()) {
+                visited.insert(current_node);
+
+                for (node adj : adj_list.at(current_node)) {
+                    if (current_dist >= dist) {
+                        nodes_out.insert(adj);
+                    }
+
+                    search = visited.find(adj);
+                    if (search == visited.end()) {
+                        queue.push_back();
+                    }
+                }
+            }
+        }
+    }
+
+    return nodes_out;
+}
+
+// get the intersection of the sets, modifying set_a
+void intersection(std::unordered_set<node> &set_a, const std::unordered_set<node> set_b) {
+    for (auto iter = set_a.begin(); iter != set_a.end();) {
+        auto search = set_b.find(*iter);
+        if (search == set_b.end()) {
+            iter = set_a.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+}
+

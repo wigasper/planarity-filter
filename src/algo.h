@@ -3,6 +3,8 @@
 #include <deque>
 #include <unordered_set>
 
+#define DIST 2
+
 std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_list) {
     std::deque<node> queue;
     std::unordered_set<node> visited;
@@ -97,5 +99,37 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
 
     for (std::pair<node, node> edge : edges) {
         add_edge(adj_list, edge.first, edge.second);
+    }
+}
+
+void propagate_from_x() {
+
+}
+
+// TODO: test to see if vecs are faster than hash sets here
+std::vector<node> init_active_set(const adjacency_list &adj_list) {
+    const node init_node = get_max_degree_node(adj_list);
+    std::vector<node> active_set {init_node};
+
+    std::unordered_set<node> putative_nodes = get_distant_nodes(init_node, DIST, adj_list);
+
+    while (putative_nodes.size() > 0) {
+        // select next node
+        // NOTE: may pick this differently to save time
+        node next_node = get_max_degree_node(putative_nodes, adj_list);
+        active_set.push_back(next_node);
+        std::unordered_set<node> next_node_dists = get_distant_nodes(next_node, DIST, adj_list);
+
+        intersection(putative_nodes, next_node_dists);
+    }
+
+    return active_set;
+}
+
+adjacency_list algo_routine(const adjacency_list &adj_list) {
+    adjacency_list out;
+
+    for (auto &[key_node, _adjs] : adj_list) {
+        add_node(out, key_node);
     }
 }
