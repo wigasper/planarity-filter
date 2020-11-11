@@ -128,7 +128,7 @@ void add_node(adjacency_list &adj_list, const node key_node) {
 
 // currently will panic if the adj_list does not already have the
 // nodes as keys. maybe checking here but this will slow things down
-void add_edge(adjacency_list &adj_list, const node_0, const node_1) {
+void add_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
     auto search = adj_list.find(node_0);
     if (search == adj_list.end()) {
         adj_list.insert({node_0, std::vector<node>});
@@ -166,11 +166,13 @@ void add_edge(adjacency_list &adj_list, const std::pair<node, node> edge) {
 // vecs for adjacents
 void dedup(adjacency_list &adj_list) {
     for (auto &[key_node, adjs] : adj_list) {
-        adjs.sort();
+        std::sort(adjs.begin(), adjs.end());
+        //adjs.sort();
     }
 
     for (auto &[key_node, adjs] : adj_list) {
-        adjs.unique();
+        std::unique(adjs.begin(), adjs.end());
+        //adjs.unique();
     }
 }
 
@@ -182,15 +184,15 @@ adjacency_list to_adj_list(const edge_list &edges) {
         node node_1 = edge.second;
 
         auto search = adj_list.find(node_0);
-        if (seach == adj_list.end()) {
+        if (search == adj_list.end()) {
             std::vector<node> this_vec {node_1};
-            adj_list.insert(node_0, this_vec);
+            adj_list.insert({node_0, this_vec});
         }
 
         search = adj_list.find(node_1);
-        if (seach == adj_list.end()) {
+        if (search == adj_list.end()) {
             std::vector<node> this_vec {node_0};
-            adj_list.insert(node_1, this_vec);
+            adj_list.insert({node_1, this_vec});
         }
     }
 
@@ -246,9 +248,9 @@ node get_max_degree_node(const std::unordered_set<node> &node_set, const adjacen
 
     for (node this_node : node_set) {
         std::vector<node> adjs = adj_list.at(this_node);
-        if (adjs.size() > max_deg) {
-            max_deg = adjs.size();
-            max_deg_node = key_node;
+        if (adj_list.at(this_node).size() > max_deg) {
+            max_deg = adj_list.at(this_node).size();
+            max_deg_node = this_node;
         }
     }
     return max_deg_node;
@@ -257,7 +259,7 @@ node get_max_degree_node(const std::unordered_set<node> &node_set, const adjacen
 // use BFS to get all nodes dist hops or more away
 // maybe this should be in algo.h
 std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
-                                    const adjancency_list &adj_list) {
+                                    const adjacency_list &adj_list) {
     std::unordered_set<node> nodes_out;
 
     std::deque<node> queue;
@@ -285,7 +287,7 @@ std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
 
                     search = visited.find(adj);
                     if (search == visited.end()) {
-                        queue.push_back();
+                        queue.push_back(adj);
                     }
                 }
             }

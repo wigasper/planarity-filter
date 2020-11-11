@@ -16,15 +16,15 @@ std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_lis
         node current_node = queue.front();
         queue.pop_front();
 
-        auto search = visited.find(current_node)
+        auto search = visited.find(current_node);
         if (search == visited.end()) {
             visited.insert(current_node);
-            component_push_back(current_node);
+            component.push_back(current_node);
 
             for (node adj : adj_list.at(current_node)) {
                 search = visited.find(adj);
                 if (search == visited.end()) {
-                    queue.push_back();
+                    queue.push_back(adj);
                 }
             }
         }
@@ -43,7 +43,7 @@ std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
     std::vector<std::vector<node>> components;
 
     while (!unvisited_nodes.empty()) {
-        node this_node = unvisited_nodes.extract(unvisited_nodes.begin());
+        node this_node = *unvisited_nodes.begin();
         std::vector<node> component = node_bfs(this_node, adj_list);
         components.push_back(component);
 
@@ -79,7 +79,7 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
         if (search != unvisited.end()) {
             unvisited.erase(search);
 
-            for (node node_0 : components.at(current_component)) {
+            for (node node_0 : components.at(current_comp)) {
                 std::vector<node> adjs = adj_list.at(node_0);
 
                 for (node node_1 : adjs) {
@@ -103,11 +103,11 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
 // TODO: also note: returning a vec<node> here, this is basically an
 // edge list or matrix of dim 2, this is not entirely clear. doing it
 // this way just for speed
-std::vector<node> propagate_from_x(const size_t node, const adjacency_list &graph) {
+std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &adj_list) {
     //adjacency_list out;
     std::vector<node> out;
-    std::unordered_map<node> nu;
-    std::deque<node> active {node};
+    std::unordered_set<node> nu;
+    std::deque<node> active {x_node};
 
     for (auto &[key_node, _adjs] : adj_list) {
         nu.insert(key_node);

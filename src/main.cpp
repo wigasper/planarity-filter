@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
 
     BOOST_LOG_TRIVIAL(info) << "Loading input";
 
-    const load_result = load_edge_list(var_map["input"].as<std::string>());
-    const adjacency_list input_graph = to_adj_list(std::get<0>(edge_list));
+    const load_result lr = load_edge_list(var_map["input"].as<std::string>());
+    const adjacency_list input_graph = to_adj_list(std::get<0>(lr));
 
     BOOST_LOG_TRIVIAL(info) << "Checking to see if graph is already planar";
 
