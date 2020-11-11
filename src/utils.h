@@ -119,15 +119,48 @@ load_result load_edge_list(const std::string file_path) {
 }
 
 void add_node(adjacency_list &adj_list, const node key_node) {
-    adj_list.insert({key_node, std::vector<node>});
+    auto search = adj_list.find(key_node);
+    if (search == adj_list.end()) {
+        adj_list.insert({key_node, std::vector<node>});
+    }
+
 }
 
 // currently will panic if the adj_list does not already have the
 // nodes as keys. maybe checking here but this will slow things down
-void add_edge(adjacency_list &adj_list, const std::pair<node, node> edge) {
-    adj_list.at(edge.first).push_back(edge.second);
-    adj_list.at(edge.first).push_back(edge.second);
+void add_edge(adjacency_list &adj_list, const node_0, const node_1) {
+    auto search = adj_list.find(node_0);
+    if (search == adj_list.end()) {
+        adj_list.insert({node_0, std::vector<node>});
+    }
+
+    auto search = adj_list.find(node_1);
+    if (search == adj_list.end()) {
+        adj_list.insert({node_1, std::vector<node>});
+    }
+
+    adj_list.at(node_0).push_back(node_1);
+    adj_list.at(node_1).push_back(node_0);
 }
+
+// checking for keys. this may slow things down and it may be preferable
+// to not do this
+// TODO just delete
+/*
+void add_edge(adjacency_list &adj_list, const std::pair<node, node> edge) {
+    auto search = adj_list.find(edge.first);
+    if (search == adj_list.end()) {
+        adj_list.insert({edge.first, std::vector<node>});
+    }
+
+    auto search = adj_list.find(edge.second);
+    if (search == adj_list.end()) {
+        adj_list.insert({edge.second, std::vector<node>});
+    }
+
+    adj_list.at(edge.first).push_back(edge.second);
+    adj_list.at(edge.second).push_back(edge.first);
+}*/
 
 // this could also just be accomplished by using unordered_sets instead of
 // vecs for adjacents
@@ -272,5 +305,15 @@ void intersection(std::unordered_set<node> &set_a, const std::unordered_set<node
             ++iter;
         }
     }
+}
+
+size_t num_edges(const adjacency_list &adj_list) {
+    size_t n_edges = 0;
+
+    for (auto &[_k, adjs] : adj_list) {
+        n_edges += adjs.size();
+    }
+
+    return n_edges;
 }
 

@@ -1,7 +1,6 @@
 #include "utils.h"
 
 #include <deque>
-#include <unordered_set>
 
 #define DIST 2
 
@@ -49,8 +48,7 @@ std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
         components.push_back(component);
 
         for (node comp_node : component) {
-            auto posit = unvisited_nodes.find(comp_node);
-            unvisited_nodes.erase(posit);
+            unvisited_nodes.erase(comp_node);
         }
     }
 
@@ -102,8 +100,64 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
     }
 }
 
-void propagate_from_x() {
+// TODO: also note: returning a vec<node> here, this is basically an
+// edge list or matrix of dim 2, this is not entirely clear. doing it
+// this way just for speed
+std::vector<node> propagate_from_x(const size_t node, const adjacency_list &graph) {
+    //adjacency_list out;
+    std::vector<node> out;
+    std::unordered_map<node> nu;
+    std::deque<node> active {node};
 
+    for (auto &[key_node, _adjs] : adj_list) {
+        nu.insert(key_node);
+    }
+
+    while (!active.empty()) {
+    //while (!nu.empty()) {
+        const node x = active.front();
+        active.pop_front();
+
+        std::vector<node> x_adjs = adj_list.at(x);
+        std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+
+        for (node y : x_adjs) {
+            auto search = nu.find(y);
+            if (search != nu.end()) {
+                std::vector <node> y_adjs = adj_list.at(y);
+
+                for (node z : y_adjs) {
+                    search = nu.find(z);
+                    auto aux_search = aux.find(z);
+                    if (search != nu.end() && aux_search != nu.end()) {
+
+                        // add the edges to out, again, this is not super
+                        // clear right now and should be cleaned up. possibly
+                        // use matrix abstraction
+                        out.push_back(x);
+                        out.push_back(y);
+                        out.push_back(x);
+                        out.push_back(z);
+                        out.push_back(y);
+                        out.push_back(z);
+
+                        active.push_front(y);
+                        active.push_front(z);
+
+                        nu.erase(y);
+                        nu.erase(z);
+
+                        aux.erase(y);
+                        aux.erase(z);
+
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return out;
 }
 
 // TODO: test to see if vecs are faster than hash sets here
@@ -129,7 +183,23 @@ std::vector<node> init_active_set(const adjacency_list &adj_list) {
 adjacency_list algo_routine(const adjacency_list &adj_list) {
     adjacency_list out;
 
-    for (auto &[key_node, _adjs] : adj_list) {
-        add_node(out, key_node);
+    const std::vector<node> active = init_active_set(adj_list);
+
+    #pragma omp parallel for
+    for (node x : active) {
+        const std::vector<node> edges = propagate_from_x(x, adj_list);
+        for (size_t idx; idx < edges.size(); idx += 2) {
+            add_edge(out, edges.at(idx), edges.at(idx + 1));
+        }
     }
+
+    dedup(out);
+
+    std::vector<std::vector<node>> components = get_components(out);
+
+    if (components.size() > 1) {
+        connect_components(out, components);
+    }
+
+    return out;
 }
