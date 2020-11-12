@@ -6,6 +6,7 @@
 #include <tuple>
 #include <algorithm>
 #include <unordered_set>
+#include <regex>
 
 #include "boost/log/core.hpp"
 #include "boost/log/expressions.hpp"
@@ -18,10 +19,12 @@
 #include "boost/graph/boyer_myrvold_planar_test.hpp"
 #include "boost/graph/graph_traits.hpp"
 
+#define MAX_DIST 7
+
 typedef size_t node;
 typedef std::vector<std::pair<node, node>> edge_list;
-typedef std::tuple<edge_list, std::unordered_map<std::string, int>,
-            std::unordered_map<int, std::string>> load_result;
+typedef std::tuple<edge_list, std::unordered_map<std::string, node>,
+            std::unordered_map<node, std::string>> load_result;
 typedef std::unordered_map<node, std::vector<node>> adjacency_list;
 
 void log_init() {
@@ -99,21 +102,22 @@ load_result load_edge_list(const std::string file_path) {
             if (search == node_ids.end()) {
                 node_ids[elements.at(0)] = current_node_id;
                 node_ids_rev[current_node_id] = elements.at(0);
-                current_node_id++
+                current_node_id++;
             }
 
             search = node_ids.find(elements.at(1));
             if (search == node_ids.end()) {
                 node_ids[elements.at(1)] = current_node_id;
                 node_ids_rev[current_node_id] = elements.at(1);
-                current_node_id++
+                current_node_id++;
             }
 
-            edge_list_out.push_back(std::make_pair(elements.at(0), elements_at(1)));
+            edge_list_out.push_back(std::make_pair(node_ids.at(elements.at(0)),
+                                                   node_ids.at(elements.at(1))));
         }
     }
 
-    file_in.close()
+    file_in.close();
 
     return std::make_tuple(edge_list_out, node_ids, node_ids_rev);
 }
@@ -121,7 +125,7 @@ load_result load_edge_list(const std::string file_path) {
 void add_node(adjacency_list &adj_list, const node key_node) {
     auto search = adj_list.find(key_node);
     if (search == adj_list.end()) {
-        adj_list.insert({key_node, std::vector<node>});
+        adj_list.insert({key_node, std::vector<node> {}});
     }
 
 }
@@ -131,12 +135,12 @@ void add_node(adjacency_list &adj_list, const node key_node) {
 void add_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
     auto search = adj_list.find(node_0);
     if (search == adj_list.end()) {
-        adj_list.insert({node_0, std::vector<node>});
+        adj_list.insert({node_0, std::vector<node> {}});
     }
 
-    auto search = adj_list.find(node_1);
+    search = adj_list.find(node_1);
     if (search == adj_list.end()) {
-        adj_list.insert({node_1, std::vector<node>});
+        adj_list.insert({node_1, std::vector<node> {}});
     }
 
     adj_list.at(node_0).push_back(node_1);
@@ -187,12 +191,16 @@ adjacency_list to_adj_list(const edge_list &edges) {
         if (search == adj_list.end()) {
             std::vector<node> this_vec {node_1};
             adj_list.insert({node_0, this_vec});
+        } else {
+            adj_list.at(node_0).push_back(node_1);
         }
 
         search = adj_list.find(node_1);
         if (search == adj_list.end()) {
             std::vector<node> this_vec {node_0};
             adj_list.insert({node_1, this_vec});
+        } else {
+            adj_list.at(node_1).push_back(node_0);
         }
     }
 
@@ -268,7 +276,7 @@ std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
 
     queue.push_back(source);
 
-    while (!queue.empty()) {
+    while (!queue.empty() && current_dist < MAX_DIST) {
         size_t queue_len = queue.size();
         current_dist++;
 

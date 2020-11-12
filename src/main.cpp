@@ -50,14 +50,16 @@ int main(int argc, char *argv[]) {
 
     if (boyer_myrvold_test(input_graph)) {
         BOOST_LOG_TRIVIAL(info) << "The provided graph is already planar";
-        exit(EXIT_SUCCESS);
+        //exit(EXIT_SUCCESS);
     }
 
+    BOOST_LOG_TRIVIAL(info) << "Running algo_routine";
     auto start = std::chrono::high_resolution_clock::now();
-    adjacency_list result = algo_routine(input_graph);
+    adjacency_list result_graph = algo_routine(input_graph);
     auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
 
-    if (!boyer_myrvold_test(result)) {
+    if (!boyer_myrvold_test(result_graph)) {
         BOOST_LOG_TRIVIAL(error) << "Error: the result graph is not planar";
         //exit(EXIT_FAILURE);
     }
@@ -68,7 +70,7 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "Execution time: " << elapsed.count() << "s";
     BOOST_LOG_TRIVIAL(info) << "Initial graph - " << "nodes: " << input_graph.size()
         << " edges: " << input_n_edges;
-    BOOST_LOG_TRIVIAL(info) << "Result graph - " << "nodes: " << result.size()
+    BOOST_LOG_TRIVIAL(info) << "Result graph - " << "nodes: " << result_graph.size()
         << " edges: " << result_n_edges;
     BOOST_LOG_TRIVIAL(info) << "Percent edges retained: "
         << (float) result_n_edges / (float) input_n_edges * 100;

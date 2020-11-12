@@ -2,7 +2,8 @@
 
 #include <deque>
 
-#define DIST 2
+#define DIST 3
+#define MAX_ACTIVE_SIZE 5000
 
 std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_list) {
     std::deque<node> queue;
@@ -55,8 +56,10 @@ std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
     return components;
 }
 
-// connects components with 1 edge, if possible
-void connect_components(adjacency_list &adj_list, const std::vector<std::vector<node>> &components) {
+// connects components with 1 edge from the original graph, if possible
+
+void connect_components(adjacency_list &adj_list, const std::vector<std::vector<node>> &components,
+                        const adjacency_list &original_graph) {
     std::unordered_set<node> unvisited;
     std::unordered_map<node, size_t> node_to_comp;
 
@@ -80,7 +83,7 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
             unvisited.erase(search);
 
             for (node node_0 : components.at(current_comp)) {
-                std::vector<node> adjs = adj_list.at(node_0);
+                std::vector<node> adjs = original_graph.at(node_0);
 
                 for (node node_1 : adjs) {
                     size_t node_1_comp = node_to_comp.at(node_1);
@@ -167,13 +170,12 @@ std::vector<node> init_active_set(const adjacency_list &adj_list) {
 
     std::unordered_set<node> putative_nodes = get_distant_nodes(init_node, DIST, adj_list);
 
-    while (putative_nodes.size() > 0) {
+    while (putative_nodes.size() > 0 && active_set.size() < MAX_ACTIVE_SIZE) {
         // select next node
         // NOTE: may pick this differently to save time
         node next_node = get_max_degree_node(putative_nodes, adj_list);
         active_set.push_back(next_node);
         std::unordered_set<node> next_node_dists = get_distant_nodes(next_node, DIST, adj_list);
-
         intersection(putative_nodes, next_node_dists);
     }
 
@@ -183,7 +185,15 @@ std::vector<node> init_active_set(const adjacency_list &adj_list) {
 adjacency_list algo_routine(const adjacency_list &adj_list) {
     adjacency_list out;
 
+    std::unordered_set<node> nu;
+
+    for (auto &[key_node, _adjs] : adj_list) {
+        nu.insert(key_node);
+        add_node(out, key_node);
+    }
+
     const std::vector<node> active = init_active_set(adj_list);
+    std::cout << "active len: " << active.size() << "\n";
 
     #pragma omp parallel for
     for (node x : active) {
@@ -198,7 +208,7 @@ adjacency_list algo_routine(const adjacency_list &adj_list) {
     std::vector<std::vector<node>> components = get_components(out);
 
     if (components.size() > 1) {
-        connect_components(out, components);
+        connect_components(out, components, adj_list);
     }
 
     return out;
