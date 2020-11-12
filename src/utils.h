@@ -324,6 +324,6 @@ size_t num_edges(const adjacency_list &adj_list) {
         n_edges += adjs.size();
     }
 
-    return n_edges;
+    return n_edges / 2;
 }
 
