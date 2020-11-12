@@ -5,6 +5,8 @@
 #define DIST 3
 #define MAX_ACTIVE_SIZE 5000
 
+enum visited_state { UNVISITED, VISITED, QUEUED };
+
 std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_list) {
     std::deque<node> queue;
     std::unordered_set<node> visited;
@@ -60,14 +62,14 @@ std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
 
 void connect_components(adjacency_list &adj_list, const std::vector<std::vector<node>> &components,
                         const adjacency_list &original_graph) {
-    std::unordered_set<node> unvisited;
+    std::unordered_map<size_t, visited_state> state;
     std::unordered_map<node, size_t> node_to_comp;
 
     for (size_t idx = 0; idx < components.size(); idx++) {
         for (node this_node : components.at(idx)) {
             node_to_comp.insert({this_node, idx});
         }
-        unvisited.insert(idx);
+        state.insert({idx, UNVISITED});
     }
 
     std::deque<size_t> queue;
@@ -78,9 +80,8 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
         size_t current_comp = queue.front();
         queue.pop_front();
 
-        auto search = unvisited.find(current_comp);
-        if (search != unvisited.end()) {
-            unvisited.erase(search);
+        if (state.at(current_comp) != VISITED) {
+            state.at(current_comp) = VISITED;
 
             for (node node_0 : components.at(current_comp)) {
                 std::vector<node> adjs = original_graph.at(node_0);
@@ -88,9 +89,9 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
                 for (node node_1 : adjs) {
                     size_t node_1_comp = node_to_comp.at(node_1);
 
-                    search = unvisited.find(node_1_comp);
-                    if (search != unvisited.end() && current_comp != node_1_comp) {
-                        edges.push_back(std::make_pair(node_0, node_1));
+                    if (state.at(node_1_comp) == UNVISITED && current_comp != node_1_comp) {
+                        state.at(node_1_comp) == QUEUED;
+			edges.push_back(std::make_pair(node_0, node_1));
                         queue.push_back(node_1_comp);
                     }
                 }
