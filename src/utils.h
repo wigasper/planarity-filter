@@ -264,6 +264,21 @@ node get_max_degree_node(const std::unordered_set<node> &node_set, const adjacen
     return max_deg_node;
 }
 
+// returns the first node of maximum degree found
+node get_max_degree_node(const std::vector<node> &node_set, const adjacency_list &adj_list) {
+    size_t max_deg = 0;
+    // TODO this is bad should probably be properly initialized w/ a value
+    node max_deg_node;
+
+    for (node this_node : node_set) {
+        std::vector<node> adjs = adj_list.at(this_node);
+        if (adj_list.at(this_node).size() > max_deg) {
+            max_deg = adj_list.at(this_node).size();
+            max_deg_node = this_node;
+        }
+    }
+    return max_deg_node;
+}
 // use BFS to get all nodes dist hops or more away
 // maybe this should be in algo.h
 std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,

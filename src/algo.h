@@ -118,8 +118,18 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
         nu.insert(key_node);
     }
 
-    while (!active.empty()) {
-    //while (!nu.empty()) {
+    //while (!active.empty()) {
+    while (!nu.empty()) {
+	// NOTE so possibly don't do this. trying tdoing while not active.empty, 
+	// and then just continue init'ing active vec from the components and 
+	// see what happens
+	if (active.empty()) {
+	    node max_deg_node = get_max_degree_node(nu, adj_list);
+	    //node temp = *nu.begin();
+	    active.push_front(max_deg_node);
+	    nu.erase(max_deg_node);
+	}
+
         const node x = active.front();
         active.pop_front();
 
@@ -166,8 +176,8 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
 }
 
 // TODO: test to see if vecs are faster than hash sets here
-std::vector<node> init_active_set(const adjacency_list &adj_list) {
-    const node init_node = get_max_degree_node(adj_list);
+std::vector<node> init_active_set(const adjacency_list &adj_list, const node init_node) {
+    //const node init_node = get_max_degree_node(adj_list);
     std::vector<node> active_set {init_node};
 
     std::unordered_set<node> putative_nodes = get_distant_nodes(init_node, DIST, adj_list);
@@ -193,31 +203,58 @@ adjacency_list algo_routine(const adjacency_list &adj_list) {
         nu.insert(key_node);
         add_node(out, key_node);
     }
+    
+    std::vector<std::vector<node>> components_init = get_components(adj_list);
+    
+    std::vector<node> active;
 
-    const std::vector<node> active = init_active_set(adj_list);
+    if (components_init.size() > 1) {
+	//#p//ragma// omp par//allel for
+	for (std::vector<node> comp : components_init) {
+	    const node init_node = get_max_degree_node(comp, adj_list);
+	    std::vector<node> this_active = init_active_set(adj_list, init_node);
+	    
+	    for (node n : this_active) {
+		active.push_back(n);
+	    } 
+	}
+    } else {
+	const node init_node = get_max_degree_node(adj_list);
+	//const std::vector<node> 
+	active = init_active_set(adj_list, init_node);
+    }
+
     std::cout << "active len: " << active.size() << "\n";
     
-    ////////
-    //
-    std::unordered_map<std::string, size_t> consensus_builder;
-    ////////
+    std::vector<std::string> edge_strs;
+
     #pragma omp parallel for
     for (node x : active) {
         const std::vector<node> edges = propagate_from_x(x, adj_list);
         for (size_t idx; idx < edges.size(); idx += 2) {
 	    std::string edge_str = std::to_string(edges.at(idx)) + " " 
 		+ std::to_string(edges.at(idx + 1));
-	    auto search = consensus_builder.find(edge_str);
-	    if (search != consensus_builder.end()) {
-		consensus_builder.at(edge_str)++;
-	    } else {
-		consensus_builder.insert({edge_str, 1});
-	    }
+	    edge_strs.push_back(edge_str);
         }
+    }
+    
+    ////////
+    //
+    std::unordered_map<std::string, size_t> consensus_builder;
+    ////////
+    
+    for (std::string edge_str : edge_strs) {
+	auto search = consensus_builder.find(edge_str);
+	if (search != consensus_builder.end()) {
+	    consensus_builder.at(edge_str)++;
+	} else {
+	    consensus_builder.insert({edge_str, 1});
+	}
     }
 
     for (auto &[key, val] : consensus_builder) {
 	if (val > 1) {
+	    //std::cout << key << "\n";
 	    std::vector<std::string> elements = parse_line(key);
 	    node node_0 = std::stoul(elements.at(0));
 	    node node_1 = std::stoul(elements.at(1));
