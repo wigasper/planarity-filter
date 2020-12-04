@@ -147,36 +147,18 @@ void add_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
     adj_list.at(node_1).push_back(node_0);
 }
 
-// checking for keys. this may slow things down and it may be preferable
-// to not do this
-// TODO just delete
-/*
-void add_edge(adjacency_list &adj_list, const std::pair<node, node> edge) {
-    auto search = adj_list.find(edge.first);
-    if (search == adj_list.end()) {
-        adj_list.insert({edge.first, std::vector<node>});
-    }
-
-    auto search = adj_list.find(edge.second);
-    if (search == adj_list.end()) {
-        adj_list.insert({edge.second, std::vector<node>});
-    }
-
-    adj_list.at(edge.first).push_back(edge.second);
-    adj_list.at(edge.second).push_back(edge.first);
-}*/
-
 // this could also just be accomplished by using unordered_sets instead of
 // vecs for adjacents
 void dedup(adjacency_list &adj_list) {
-    for (auto &[key_node, adjs] : adj_list) {
-        std::sort(adjs.begin(), adjs.end());
-        //adjs.sort();
+    for (auto element : adj_list) {
+	std::vector<node> *adjs = &adj_list.at(element.first);
+	std::sort((*adjs).begin(), (*adjs).end());
     }
 
-    for (auto &[key_node, adjs] : adj_list) {
-        std::unique(adjs.begin(), adjs.end());
-        //adjs.unique();
+    for (auto element : adj_list) {
+	std::vector<node> *adjs = &adj_list.at(element.first);
+	auto last = std::unique((*adjs).begin(), (*adjs).end());
+	(*adjs).erase(last, (*adjs).end());
     }
 }
 
