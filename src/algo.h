@@ -207,7 +207,8 @@ adjacency_list algo_routine(const adjacency_list &adj_list) {
     dedup(out);
 
     std::vector<std::vector<node>> components = get_components(out);
-
+    
+    // TODO while loop this? can there still be disconnected components after running?
     if (components.size() > 1) {
         connect_components(out, components, adj_list);
     }
