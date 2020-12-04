@@ -90,7 +90,7 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
                     size_t node_1_comp = node_to_comp.at(node_1);
 
                     if (state.at(node_1_comp) == UNVISITED && current_comp != node_1_comp) {
-                        state.at(node_1_comp) == QUEUED;
+                        state.at(node_1_comp) = QUEUED;
 			edges.push_back(std::make_pair(node_0, node_1));
                         queue.push_back(node_1_comp);
                     }
