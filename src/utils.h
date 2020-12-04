@@ -142,7 +142,7 @@ void add_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
     if (search == adj_list.end()) {
         adj_list.insert({node_1, std::vector<node> {}});
     }
-
+    
     adj_list.at(node_0).push_back(node_1);
     adj_list.at(node_1).push_back(node_0);
 }
@@ -162,28 +162,30 @@ void dedup(adjacency_list &adj_list) {
     }
 }
 
+// NOTE does not load self loops
 adjacency_list to_adj_list(const edge_list &edges) {
     adjacency_list adj_list;
 
     for (std::pair<node, node> edge : edges) {
         node node_0 = edge.first;
         node node_1 = edge.second;
+	if (node_0 != node_1) {
+	    auto search = adj_list.find(node_0);
+	    if (search == adj_list.end()) {
+		std::vector<node> this_vec {node_1};
+		adj_list.insert({node_0, this_vec});
+	    } else {
+		adj_list.at(node_0).push_back(node_1);
+	    }
 
-        auto search = adj_list.find(node_0);
-        if (search == adj_list.end()) {
-            std::vector<node> this_vec {node_1};
-            adj_list.insert({node_0, this_vec});
-        } else {
-            adj_list.at(node_0).push_back(node_1);
-        }
-
-        search = adj_list.find(node_1);
-        if (search == adj_list.end()) {
-            std::vector<node> this_vec {node_0};
-            adj_list.insert({node_1, this_vec});
-        } else {
-            adj_list.at(node_1).push_back(node_0);
-        }
+	    search = adj_list.find(node_1);
+	    if (search == adj_list.end()) {
+		std::vector<node> this_vec {node_0};
+		adj_list.insert({node_1, this_vec});
+	    } else {
+		adj_list.at(node_1).push_back(node_0);
+	    }
+	}
     }
 
     dedup(adj_list);
@@ -307,6 +309,36 @@ size_t num_edges(const adjacency_list &adj_list) {
         n_edges += adjs.size();
     }
 
-    return n_edges;
+    return n_edges / 2;
 }
 
+void write_graph(const adjacency_list &adj_list, 
+	const std::unordered_map<node, std::string> node_labels, 
+	const std::string file_path) {
+    edge_list edges_out = to_edge_list(adj_list);
+
+    std::ofstream file_out;
+    file_out.open(file_path);
+
+    // a hack to quickly dedup, should do nicer
+    std::unordered_set<std::string> ledger;
+
+    for (std::pair<node, node> edge : edges_out) {
+	std::string node_0 = node_labels.at(edge.first);
+	std::string node_1 = node_labels.at(edge.second);
+
+	std::string edge_repr_0 = node_0 + " " + node_1;
+	std::string edge_repr_1 = node_1 + " " + node_0;
+
+	auto search_0 = ledger.find(edge_repr_0);
+	auto search_1 = ledger.find(edge_repr_1);
+
+	if (search_0 == ledger.end() && search_1 == ledger.end()) {
+	    file_out << edge_repr_0 << "\n";
+	    ledger.insert(edge_repr_0);
+	    ledger.insert(edge_repr_1);
+	}
+    }
+
+    file_out.close();
+}

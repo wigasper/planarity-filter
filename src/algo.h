@@ -2,6 +2,7 @@
 
 #include <deque>
 
+// These constants are relavant to other versions
 #define DIST 3
 #define MAX_ACTIVE_SIZE 5000
 
@@ -108,7 +109,6 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
 // edge list or matrix of dim 2, this is not entirely clear. doing it
 // this way just for speed
 std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &adj_list) {
-    //adjacency_list out;
     std::vector<node> out;
     std::unordered_set<node> nu;
     std::deque<node> active {x_node};
@@ -117,9 +117,14 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
         nu.insert(key_node);
     }
 
-    while (!active.empty()) {
-    //while (!nu.empty()) {
-        const node x = active.front();
+    while (!nu.empty()) {
+        if (active.empty()) {
+	    node temp = *nu.begin();
+	    active.push_front(temp);
+	    nu.erase(temp);
+	}
+
+	const node x = active.front();
         active.pop_front();
 
         std::vector<node> x_adjs = adj_list.at(x);
@@ -137,7 +142,7 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
 
                         // add the edges to out, again, this is not super
                         // clear right now and should be cleaned up. possibly
-                        // use matrix abstraction
+                        // use matrix formalism
                         out.push_back(x);
                         out.push_back(y);
                         out.push_back(x);
@@ -185,6 +190,8 @@ std::vector<node> init_active_set(const adjacency_list &adj_list) {
 
 adjacency_list algo_routine(const adjacency_list &adj_list) {
     adjacency_list out;
+    
+    std::vector<std::vector<node>> components = get_components(adj_list);
 
     std::unordered_set<node> nu;
 
@@ -193,25 +200,24 @@ adjacency_list algo_routine(const adjacency_list &adj_list) {
         add_node(out, key_node);
     }
 
-    const std::vector<node> active = init_active_set(adj_list);
-    std::cout << "active len: " << active.size() << "\n";
-
-    #pragma omp parallel for
-    for (node x : active) {
-        const std::vector<node> edges = propagate_from_x(x, adj_list);
-        for (size_t idx; idx < edges.size(); idx += 2) {
-            add_edge(out, edges.at(idx), edges.at(idx + 1));
-        }
+    for (std::vector<node> component : components) {
+	node init_x = component.front();
+	const std::vector<node> edges = propagate_from_x(init_x, adj_list);
+	// This is not totally clear, should make it explicit
+	// essentially a flat matrix of dim 2
+	for (size_t idx = 0; idx < edges.size(); idx += 2) {
+	    add_edge(out, edges.at(idx), edges.at(idx + 1));
+	}
     }
 
-    dedup(out);
-
-    std::vector<std::vector<node>> components = get_components(out);
+    components = get_components(out);
     
     // TODO while loop this? can there still be disconnected components after running?
     if (components.size() > 1) {
         connect_components(out, components, adj_list);
     }
+
+    dedup(out);
 
     return out;
 }

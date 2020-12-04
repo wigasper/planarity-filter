@@ -44,7 +44,10 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "Loading input";
 
     const load_result lr = load_edge_list(var_map["input"].as<std::string>());
-    const adjacency_list input_graph = to_adj_list(std::get<0>(lr));
+    adjacency_list input_graph = to_adj_list(std::get<0>(lr));
+    
+    // node_labels is a map node: string 
+    const std::unordered_map<node, std::string> node_labels = std::get<2>(lr);
 
     BOOST_LOG_TRIVIAL(info) << "Checking to see if graph is already planar";
 
@@ -52,6 +55,9 @@ int main(int argc, char *argv[]) {
         BOOST_LOG_TRIVIAL(info) << "The provided graph is already planar";
         //exit(EXIT_SUCCESS);
     }
+
+    // dedup input graph 
+    dedup(input_graph);
 
     BOOST_LOG_TRIVIAL(info) << "Running algo_routine";
     auto start = std::chrono::high_resolution_clock::now();
@@ -74,6 +80,8 @@ int main(int argc, char *argv[]) {
         << " edges: " << result_n_edges;
     BOOST_LOG_TRIVIAL(info) << "Percent edges retained: "
         << (float) result_n_edges / (float) input_n_edges * 100;
-
+    
+    write_graph(result_graph, node_labels, var_map["output"].as<std::string>());
+    
     return 0;
 }
