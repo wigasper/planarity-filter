@@ -2,7 +2,7 @@
 
 #include <deque>
 
-#define DIST 3
+#define DIST 4
 #define MAX_ACTIVE_SIZE 5000
 
 enum visited_state { UNVISITED, VISITED, QUEUED };
@@ -108,7 +108,6 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
 // edge list or matrix of dim 2, this is not entirely clear. doing it
 // this way just for speed
 std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &adj_list) {
-    //adjacency_list out;
     std::vector<node> out;
     std::unordered_set<node> nu;
     std::deque<node> active {x_node};
@@ -117,8 +116,14 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
         nu.insert(key_node);
     }
 
-    while (!active.empty()) {
-    //while (!nu.empty()) {
+    //while (!active.empty()) {
+    while (!nu.empty()) {
+	if (active.empty()) {
+	    node temp = *nu.begin();
+	    active.push_front(temp);
+	    nu.erase(temp);	    
+	}
+
         const node x = active.front();
         active.pop_front();
 
@@ -165,7 +170,7 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
 }
 
 // TODO: test to see if vecs are faster than hash sets here
-std::vector<node> init_active_set(const adjacency_list &adj_list) {
+std::vector<node> init_center_nodes(const adjacency_list &adj_list) {
     const node init_node = get_max_degree_node(adj_list);
     std::vector<node> active_set {init_node};
 
@@ -183,25 +188,71 @@ std::vector<node> init_active_set(const adjacency_list &adj_list) {
     return active_set;
 }
 
+// just want the neighbors here, could add something later to go out
+// a specified distance
+adjacency_list build_subgraph(const node start_node,
+	const adjacency_list &adj_list) {
+    adjacency_list adj_list_out;
+
+    adj_list_out.insert({start_node, adj_list.at(start_node)});
+    
+    // this could be better, some redudant things happening
+    for (node node_0 : adj_list.at(start_node)) {
+	auto search = adj_list_out.find(node_0);
+	if (search == adj_list_out.end()) {
+	    std::vector<node> this_vec {start_node};
+	    adj_list_out.insert({node_0, this_vec});
+	}
+
+	for (node node_1 : adj_list.at(node_0)) {
+	    auto search = std::find(adj_list_out.at(start_node).begin(), 
+		    adj_list_out.at(start_node).end(), node_1);
+	    if (search != adj_list_out.at(start_node).end()) {
+		search = std::find(adj_list_out.at(node_0).begin(), 
+			adj_list_out.at(node_0).end(), node_1);
+		if (search == adj_list_out.at(node_0).end()) {
+		    adj_list_out.at(node_0).push_back(node_1);
+		}
+	    }
+	}
+
+    }
+
+    return adj_list_out;
+}
+
 adjacency_list algo_routine(const adjacency_list &adj_list) {
     adjacency_list out;
 
-    std::unordered_set<node> nu;
-
     for (auto &[key_node, _adjs] : adj_list) {
-        nu.insert(key_node);
         add_node(out, key_node);
     }
 
-    const std::vector<node> active = init_active_set(adj_list);
-    std::cout << "active len: " << active.size() << "\n";
-
+    const std::vector<node> center_nodes = init_center_nodes(adj_list);
+    std::cout << "Number center nodes: " << center_nodes.size() << "\n";
+    
+    std::vector<std::pair<adjacency_list, node>> partitions;
+    
+    #pragma omp parallel for 
+    for (node n : center_nodes) {
+	std::pair<adjacency_list, node> this_tup = 
+	    std::make_pair(build_subgraph(n, adj_list), n);
+	#pragma omp critical(part)
+	{
+	    partitions.push_back(this_tup);
+	}
+	
+    } 
+    std::cout << "n parts: "<<partitions.size()<<"\n";
     #pragma omp parallel for
-    for (node x : active) {
-        const std::vector<node> edges = propagate_from_x(x, adj_list);
-        for (size_t idx; idx < edges.size(); idx += 2) {
-            add_edge(out, edges.at(idx), edges.at(idx + 1));
-        }
+    for (std::pair<adjacency_list, node> partition : partitions) {
+        const std::vector<node> edges = propagate_from_x(partition.second, partition.first);
+	#pragma omp critical(out)
+	{
+	    for (size_t idx = 0; idx < edges.size(); idx += 2) {
+		add_edge(out, edges.at(idx), edges.at(idx + 1));
+	    }
+	}
     }
 
     dedup(out);
