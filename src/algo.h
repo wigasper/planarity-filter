@@ -105,16 +105,71 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
     }
 }
 
+void add_diamonds(const node x, const adjacency_list &adj_list,
+	std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
+    
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+     for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector<node> y_adjs = adj_list.at(y);
+	    
+	    bool found = false;
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != nu.end()) {
+		    std::vector<node> z_adjs = adj_list.at(z);
+		    for (node w : z_adjs) {
+			search = nu.find(w);
+			aux_search = aux.find(w);
+			if (search != nu.end() && aux_search != nu.end()) {
+			    out.push_back(x);
+			    out.push_back(y);
+			    out.push_back(x);
+			    out.push_back(z);
+			    out.push_back(y);
+			    out.push_back(z);
+			    out.push_back(x);
+			    out.push_back(w);
+			    out.push_back(z);
+			    out.push_back(w);
+
+			    active.push_front(y);
+			    active.push_front(z);
+			    active.push_front(w);
+
+			    nu.erase(y);
+			    nu.erase(z);
+			    nu.erase(w);
+
+			    aux.erase(y);
+			    aux.erase(z);
+			    aux.erase(w);
+
+			    found = true;
+
+			    break;
+			}	    
+		    } 		
+		}
+		if (found) {break;}
+	    }
+	}
+    }
+}  
+
 void add_triangles(const node x, const adjacency_list &adj_list, 
-    std::unordered_set<node> &nu, std::vector<node> &out, 
-    std::deque<node> &active) {
+    std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
     std::vector<node> x_adjs = adj_list.at(x);
     std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
 
     for (node y : x_adjs) {
 	auto search = nu.find(y);
 	if (search != nu.end()) {
-	    std::vector <node> y_adjs = adj_list.at(y);
+	    std::vector<node> y_adjs = adj_list.at(y);
 
 	    for (node z : y_adjs) {
 		search = nu.find(z);
