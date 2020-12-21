@@ -417,15 +417,15 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
     return partitions;
 } 
 
-adjacency_list algo_routine(const adjacency_list &adj_list) {
+adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
     adjacency_list out;
 
     for (auto &[key_node, _adjs] : adj_list) {
         add_node(out, key_node);
     }
-    std::vector<adjacency_list> partitions = partition_nodes(adj_list, 8);
+    std::vector<adjacency_list> partitions = partition_nodes(adj_list, threads);
 
-#pragma omp parallel for num_threads(1)
+#pragma omp parallel for num_threads(threads)
     for (adjacency_list partition : partitions) {
 	const node init_x = get_max_degree_node(partition);
 	const std::vector<node> edges = propagate_from_x(init_x, partition);

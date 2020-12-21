@@ -8,13 +8,16 @@
 
 int main(int argc, char *argv[]) {
     log_init();
+    
+    int num_threads = 1;
 
     namespace po = boost::program_options;
 
     po::options_description desc("Arguments");
     desc.add_options()("help,h", "display help message")
         ("input,i", po::value<std::string>()->required(), "input file path")
-        ("output,o", po::value<std::string>()->required(), "output file path");
+        ("output,o", po::value<std::string>()->required(), "output file path")
+	("threads,t", po::value<int>(&num_threads), "number of threads to use");
 
     po::variables_map var_map;
 
@@ -40,6 +43,7 @@ int main(int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "abbrev. commit hash: " << GIT_COMMIT_HASH;
     BOOST_LOG_TRIVIAL(info) << "Input: " << var_map["input"].as<std::string>();
     BOOST_LOG_TRIVIAL(info) << "Output: " << var_map["output"].as<std::string>();
+    BOOST_LOG_TRIVIAL(info) << "Num. threads: " << num_threads;
 
     BOOST_LOG_TRIVIAL(info) << "Loading input";
 
@@ -61,7 +65,7 @@ int main(int argc, char *argv[]) {
 
     BOOST_LOG_TRIVIAL(info) << "Running algo_routine";
     auto start = std::chrono::high_resolution_clock::now();
-    adjacency_list result_graph = algo_routine(input_graph);
+    adjacency_list result_graph = algo_routine(input_graph, num_threads);
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
 
