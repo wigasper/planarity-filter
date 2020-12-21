@@ -2,7 +2,7 @@
 
 #include <deque>
 
-#define DIST 3
+#define DIST 4
 #define MAX_ACTIVE_SIZE 5000
 
 enum visited_state { UNVISITED, VISITED, QUEUED };
@@ -108,7 +108,6 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
 // edge list or matrix of dim 2, this is not entirely clear. doing it
 // this way just for speed
 std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &adj_list) {
-    //adjacency_list out;
     std::vector<node> out;
     std::unordered_set<node> nu;
     std::deque<node> active {x_node};
@@ -117,8 +116,13 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
         nu.insert(key_node);
     }
 
-    while (!active.empty()) {
-    //while (!nu.empty()) {
+    while (!nu.empty()) {
+	if (active.empty()) {
+	    node temp = *nu.begin();
+	    active.push_front(temp);
+	    nu.erase(temp);	    
+	}
+
         const node x = active.front();
         active.pop_front();
 
@@ -164,46 +168,142 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
     return out;
 }
 
-// TODO: test to see if vecs are faster than hash sets here
-std::vector<node> init_active_set(const adjacency_list &adj_list) {
-    const node init_node = get_max_degree_node(adj_list);
-    std::vector<node> active_set {init_node};
+std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list, 
+	const size_t num_partitions) {
+    std::vector<adjacency_list> partitions;
 
-    std::unordered_set<node> putative_nodes = get_distant_nodes(init_node, DIST, adj_list);
-
-    while (putative_nodes.size() > 0 && active_set.size() < MAX_ACTIVE_SIZE) {
-        // select next node
-        // NOTE: may pick this differently to save time
-        node next_node = get_max_degree_node(putative_nodes, adj_list);
-        active_set.push_back(next_node);
-        std::unordered_set<node> next_node_dists = get_distant_nodes(next_node, DIST, adj_list);
-        intersection(putative_nodes, next_node_dists);
-    }
-
-    return active_set;
-}
-
-adjacency_list algo_routine(const adjacency_list &adj_list) {
-    adjacency_list out;
-
-    std::unordered_set<node> nu;
+    std::unordered_set<node> node_set;
+    size_t num_nodes = node_set.size();
 
     for (auto &[key_node, _adjs] : adj_list) {
-        nu.insert(key_node);
+	node_set.insert(key_node);
+    }
+    
+    // initialize partitions with high degree nodes
+    // 
+    // TODO it would be even better to initialize w/ distant high 
+    // degree nodes
+    for (size_t _n = 0; _n < num_partitions; _n++) {
+	node max_deg_node = get_max_degree_node(node_set, adj_list);
+	adjacency_list new_adj_list;
+	add_node(new_adj_list, max_deg_node);
+	node_set.erase(max_deg_node);
+	partitions.push_back(new_adj_list);
+    }
+    
+    // add neighbors first
+    for (size_t idx = 0; idx < partitions.size(); idx++) {
+	node node_0 = partitions.at(idx).begin()->first;
+	for (node node_1 : adj_list.at(node_0)) {
+	    auto search = node_set.find(node_1);
+	    if (search != node_set.end()) {
+		add_node(partitions.at(idx), node_1);
+		//add_edge(partitions.at(idx), node_0, node_1);
+		
+		// neighbors that are in the partition need their
+		// edges
+		for (node adj : adj_list.at(node_1)) {
+		    auto search = partitions.at(idx).find(adj);
+		    if (search != partitions.at(idx).end()) {
+			add_edge(partitions.at(idx), node_1, adj);
+		    }
+		}
+		node_set.erase(node_1);
+	    }	    
+	}
+    }
+    
+    // start adding nodes to partitions with BFS
+    for (size_t idx = 0; idx < partitions.size(); idx++) {
+	size_t num_nodes_added = 0;
+	
+	std::deque<node> queue;
+	std::unordered_set<node> visited;
+	queue.push_back(partitions.at(idx).begin()->first);
+
+	while (!queue.empty() && num_nodes_added < num_nodes / num_partitions) {
+	    const size_t queue_len = queue.size();
+
+	    for (size_t _ = 0; _ < queue_len; _++) {
+		node current_node = queue.front();
+		queue.pop_front();
+
+		auto search = visited.find(current_node);
+		if (search == visited.end()) {
+		    visited.insert(current_node);
+		    std::vector<node> adjs = adj_list.at(current_node);
+		    for (node node_0 : adjs) {
+			auto search = node_set.find(node_0);
+			if (search != node_set.end()) {
+			    add_node(partitions.at(idx), node_0);
+			    
+			    search = visited.find(node_0);
+			    if (search == visited.end()) {
+				queue.push_back(node_0);
+			    }
+
+			    num_nodes_added++;
+			    // for each neighbor from the original graph,
+			    // if the neighbor is in the partition, edges should
+			    // be added
+			    for (node node_1 : adj_list.at(node_0)) {
+				auto search = partitions.at(idx).find(node_1);
+				if (search != partitions.at(idx).end()) {
+				    add_edge(partitions.at(idx), node_0, node_1);
+				}
+			    }
+			    node_set.erase(node_0);
+
+			}
+		    }
+		}
+	    }
+	}
+    }
+    
+    size_t idx = 0;
+    while (!node_set.empty()) {
+	if (idx >= partitions.size()) {
+	    idx = 0;
+	}
+
+	node this_node = *node_set.begin();
+	add_node(partitions.at(idx), this_node);
+	for (node node_1 : adj_list.at(this_node)) {
+	    auto search = partitions.at(idx).find(node_1);
+	    if (search != partitions.at(idx).end()) {
+		add_edge(partitions.at(idx), this_node, node_1);
+	    }
+	}
+	node_set.erase(this_node);
+	idx++;
+    }
+
+    return partitions;
+} 
+
+adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
+    adjacency_list out;
+
+    for (auto &[key_node, _adjs] : adj_list) {
         add_node(out, key_node);
     }
+    std::vector<adjacency_list> partitions = partition_nodes(adj_list, threads);
 
-    const std::vector<node> active = init_active_set(adj_list);
-    std::cout << "active len: " << active.size() << "\n";
+#pragma omp parallel for num_threads(threads)
+    for (adjacency_list partition : partitions) {
+	const node init_x = get_max_degree_node(partition);
+	const std::vector<node> edges = propagate_from_x(init_x, partition);
+	
+#pragma omp critical(out)
+	{
+	    for (size_t idx = 0; idx < edges.size(); idx += 2) {
+		add_edge(out, edges.at(idx), edges.at(idx + 1));
+	    }
+	}
 
-    #pragma omp parallel for
-    for (node x : active) {
-        const std::vector<node> edges = propagate_from_x(x, adj_list);
-        for (size_t idx; idx < edges.size(); idx += 2) {
-            add_edge(out, edges.at(idx), edges.at(idx + 1));
-        }
     }
-
+    
     dedup(out);
 
     std::vector<std::vector<node>> components = get_components(out);
