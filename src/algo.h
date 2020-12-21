@@ -105,6 +105,49 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
     }
 }
 
+void add_triangles(const node x, const adjacency_list &adj_list, 
+    std::unordered_set<node> &nu, std::vector<node> &out, 
+    std::deque<node> &active) {
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+
+    for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector <node> y_adjs = adj_list.at(y);
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != nu.end()) {
+
+		    // add the edges to out, again, this is not super
+		    // clear right now and should be cleaned up. possibly
+		    // use matrix abstraction
+		    out.push_back(x);
+		    out.push_back(y);
+		    out.push_back(x);
+		    out.push_back(z);
+		    out.push_back(y);
+		    out.push_back(z);
+
+		    active.push_front(y);
+		    active.push_front(z);
+
+		    nu.erase(y);
+		    nu.erase(z);
+
+		    aux.erase(y);
+		    aux.erase(z);
+
+		    break;
+		}
+	    }
+	}
+    }
+
+}
+
 // TODO: also note: returning a vec<node> here, this is basically an
 // edge list or matrix of dim 2, this is not entirely clear. doing it
 // this way just for speed
@@ -127,43 +170,8 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
         const node x = active.front();
         active.pop_front();
 
-        std::vector<node> x_adjs = adj_list.at(x);
-        std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+	add_triangles(x, adj_list, nu, out, active);
 
-        for (node y : x_adjs) {
-            auto search = nu.find(y);
-            if (search != nu.end()) {
-                std::vector <node> y_adjs = adj_list.at(y);
-
-                for (node z : y_adjs) {
-                    search = nu.find(z);
-                    auto aux_search = aux.find(z);
-                    if (search != nu.end() && aux_search != nu.end()) {
-
-                        // add the edges to out, again, this is not super
-                        // clear right now and should be cleaned up. possibly
-                        // use matrix abstraction
-                        out.push_back(x);
-                        out.push_back(y);
-                        out.push_back(x);
-                        out.push_back(z);
-                        out.push_back(y);
-                        out.push_back(z);
-
-                        active.push_front(y);
-                        active.push_front(z);
-
-                        nu.erase(y);
-                        nu.erase(z);
-
-                        aux.erase(y);
-                        aux.erase(z);
-
-                        break;
-                    }
-                }
-            }
-        }
     }
 
     return out;
