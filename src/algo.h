@@ -116,7 +116,6 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
         nu.insert(key_node);
     }
 
-    //while (!active.empty()) {
     while (!nu.empty()) {
 	if (active.empty()) {
 	    node temp = *nu.begin();
@@ -169,138 +168,6 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
     return out;
 }
 
-// TODO: test to see if vecs are faster than hash sets here
-std::vector<node> init_center_nodes(const adjacency_list &adj_list) {
-    const node init_node = get_max_degree_node(adj_list);
-    std::vector<node> active_set {init_node};
-
-    std::unordered_set<node> putative_nodes = get_distant_nodes(init_node, DIST, adj_list);
-
-    while (putative_nodes.size() > 0 && active_set.size() < MAX_ACTIVE_SIZE) {
-        // select next node
-        // NOTE: may pick this differently to save time
-        node next_node = get_max_degree_node(putative_nodes, adj_list);
-        active_set.push_back(next_node);
-        std::unordered_set<node> next_node_dists = get_distant_nodes(next_node, DIST, adj_list);
-        intersection(putative_nodes, next_node_dists);
-    }
-
-    return active_set;
-}
-
-// just want the neighbors here, could add something later to go out
-// a specified distance
-adjacency_list build_subgraph(const node start_node,
-	const adjacency_list &adj_list) {
-    adjacency_list adj_list_out;
-
-    adj_list_out.insert({start_node, adj_list.at(start_node)});
-    
-    // this could be better, some redudant things happening
-    for (node node_0 : adj_list.at(start_node)) {
-	auto search = adj_list_out.find(node_0);
-	if (search == adj_list_out.end()) {
-	    std::vector<node> this_vec {start_node};
-	    adj_list_out.insert({node_0, this_vec});
-	}
-
-	for (node node_1 : adj_list.at(node_0)) {
-	    auto search = std::find(adj_list_out.at(start_node).begin(), 
-		    adj_list_out.at(start_node).end(), node_1);
-	    if (search != adj_list_out.at(start_node).end()) {
-		search = std::find(adj_list_out.at(node_0).begin(), 
-			adj_list_out.at(node_0).end(), node_1);
-		if (search == adj_list_out.at(node_0).end()) {
-		    adj_list_out.at(node_0).push_back(node_1);
-		}
-	    }
-	}
-
-    }
-
-    return adj_list_out;
-}
-/*
-std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list, 
-	const size_t num_partitions) {
-    std::vector<adjacency_list> partitions;
-
-    std::unordered_set<node> node_set;
-
-    for (auto &[key_node, _adjs] : adj_list) {
-	node_set.insert(key_node);
-    }
-    
-    // initialize partitions with high degree nodes
-    for (size_t _n = 0; _n < num_partitions; _n++) {
-	node max_deg_node = get_max_degree_node(node_set, adj_list);
-	adjacency_list new_adj_list;
-	add_node(new_adj_list, max_deg_node);
-	node_set.erase(max_deg_node);
-	partitions.push_back(new_adj_list);
-    }
-
-    // add neighbors first
-    for (size_t idx = 0; idx < partitions.size(); idx++) {
-	node node_0 = partitions.at(idx).begin()->first;
-	for (node node_1 : adj_list.at(node_0)) {
-	    auto search = node_set.find(node_1);
-	    if (search != node_set.end()) {
-		add_node(partitions.at(idx), node_1);
-		//add_edge(partitions.at(idx), node_0, node_1);
-		
-		// neighbors that are in the partition need their
-		// edges
-		for (node adj : adj_list.at(node_1)) {
-		    auto search = partitions.at(idx).find(adj);
-		    if (search != partitions.at(idx).end()) {
-			add_edge(partitions.at(idx), node_1, adj);
-		    }
-		}
-		node_set.erase(node_1);
-	    }	    
-	}
-    }
-
-    while (!node_set.empty()) {
-	for (size_t idx = 0; idx < partitions.size(); idx++) {
-	    size_t num_nodes_added = 0;
-
-	    for (auto &[key_node, _] : partitions.at(idx)) {
-		if (num_nodes_added > 5000) {
-		    break;
-		}
-		// look at the neighbors in the original graph
-		std::vector<node> adjs = adj_list.at(key_node);
-		for (node node_0 : adjs) {
-		    // if neighbors in the original graph are
-		    // still in node_set, add to partition
-		    auto search = node_set.find(node_0);
-		    if (search != node_set.end()) {
-			add_node(partitions.at(idx), node_0);
-			num_nodes_added++;
-			// for each neighbor from the original graph,
-			// if the neighbor is in the partition, edges should
-			// be added
-			for (node node_1 : adj_list.at(node_0)) {
-			    auto search = partitions.at(idx).find(node_1);
-			    if (search != partitions.at(idx).end()) {
-				add_edge(partitions.at(idx), node_0, node_1);
-			    }
-			}
-			node_set.erase(node_0);
-		    }
-		}
-	    }
-	}
-    }
-
-    for (adjacency_list partition : partitions) {
-	dedup(partition);
-    }
-
-    return partitions;
-} */
 std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list, 
 	const size_t num_partitions) {
     std::vector<adjacency_list> partitions;
@@ -312,8 +179,10 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	node_set.insert(key_node);
     }
     
-    std::cout<<"initing partitions\n";
     // initialize partitions with high degree nodes
+    // 
+    // TODO it would be even better to initialize w/ distant high 
+    // degree nodes
     for (size_t _n = 0; _n < num_partitions; _n++) {
 	node max_deg_node = get_max_degree_node(node_set, adj_list);
 	adjacency_list new_adj_list;
@@ -321,7 +190,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	node_set.erase(max_deg_node);
 	partitions.push_back(new_adj_list);
     }
-    std::cout<<"adding neighbors first\n";
+    
     // add neighbors first
     for (size_t idx = 0; idx < partitions.size(); idx++) {
 	node node_0 = partitions.at(idx).begin()->first;
@@ -343,8 +212,8 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	    }	    
 	}
     }
-
-    std::cout<<"whittling down the node set\n";
+    
+    // start adding nodes to partitions with BFS
     for (size_t idx = 0; idx < partitions.size(); idx++) {
 	size_t num_nodes_added = 0;
 	
@@ -409,10 +278,6 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	node_set.erase(this_node);
 	idx++;
     }
-   // std::cout<<"moving to dedup\n";
-    //for (adjacency_list partition : partitions) {
-//	dedup(partition);
-  //  }
 
     return partitions;
 } 
@@ -438,35 +303,7 @@ adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
 	}
 
     }
-
-/*
-    const std::vector<node> center_nodes = init_center_nodes(adj_list);
-    std::cout << "Number center nodes: " << center_nodes.size() << "\n";
     
-    std::vector<std::pair<adjacency_list, node>> partitions;
-    
-    #pragma omp parallel for 
-    for (node n : center_nodes) {
-	std::pair<adjacency_list, node> this_tup = 
-	    std::make_pair(build_subgraph(n, adj_list), n);
-	#pragma omp critical(part)
-	{
-	    partitions.push_back(this_tup);
-	}
-	
-    } 
-    std::cout << "n parts: "<<partitions.size()<<"\n";
-    #pragma omp parallel for num_threads(8)
-    for (std::pair<adjacency_list, node> partition : partitions) {
-        const std::vector<node> edges = propagate_from_x(partition.second, partition.first);
-	#pragma omp critical(out)
-	{
-	    for (size_t idx = 0; idx < edges.size(); idx += 2) {
-		add_edge(out, edges.at(idx), edges.at(idx + 1));
-	    }
-	}
-    }
-    */
     dedup(out);
 
     std::vector<std::vector<node>> components = get_components(out);
