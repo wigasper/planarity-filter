@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <deque>
+#include <random>
 
 #define DIST 4
 #define MAX_ACTIVE_SIZE 5000
@@ -179,17 +180,30 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	node_set.insert(key_node);
     }
     
+    std::mt19937 generator(42);
+
+    for (size_t _ = 0; _ < num_partitions; _++) {
+	std::uniform_int_distribution<> distribution(0, node_set.size() - 1);
+	auto iter = node_set.begin();
+	std::advance(iter, distribution(generator));
+
+	adjacency_list new_adj_list;
+	add_node(new_adj_list, *iter);
+	node_set.erase(iter);
+	partitions.push_back(new_adj_list);
+    } 
+
     // initialize partitions with high degree nodes
     // 
     // TODO it would be even better to initialize w/ distant high 
     // degree nodes
-    for (size_t _n = 0; _n < num_partitions; _n++) {
+/*    for (size_t _n = 0; _n < num_partitions; _n++) {
 	node max_deg_node = get_max_degree_node(node_set, adj_list);
 	adjacency_list new_adj_list;
 	add_node(new_adj_list, max_deg_node);
 	node_set.erase(max_deg_node);
 	partitions.push_back(new_adj_list);
-    }
+    }*/
     
     // add neighbors first
     for (size_t idx = 0; idx < partitions.size(); idx++) {
