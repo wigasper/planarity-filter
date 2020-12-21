@@ -174,7 +174,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
     std::vector<adjacency_list> partitions;
 
     std::unordered_set<node> node_set;
-    size_t num_nodes = node_set.size();
+    //size_t num_nodes = node_set.size();
 
     for (auto &[key_node, _adjs] : adj_list) {
 	node_set.insert(key_node);
@@ -228,6 +228,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	}
     }
     
+    size_t num_nodes_to_add = node_set.size() / num_partitions;
     // start adding nodes to partitions with BFS
     for (size_t idx = 0; idx < partitions.size(); idx++) {
 	size_t num_nodes_added = 0;
@@ -236,7 +237,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	std::unordered_set<node> visited;
 	queue.push_back(partitions.at(idx).begin()->first);
 
-	while (!queue.empty() && num_nodes_added < num_nodes / num_partitions) {
+	while (!queue.empty() && num_nodes_added < num_nodes_to_add) {
 	    const size_t queue_len = queue.size();
 
 	    for (size_t _ = 0; _ < queue_len; _++) {
