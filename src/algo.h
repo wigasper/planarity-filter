@@ -331,3 +331,42 @@ adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
 
     return out;
 }
+
+// this is kind of sloppy and based on the premise that the 
+// output graph (current_graph) is unneeded for speed to avoid 
+// a big data copy
+size_t maximal_planar(adjacency_list &input_graph, adjacency_list &current_graph ) {
+    edge_list input_edges = to_edge_list(input_graph);
+    boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS> boost_graph(input_graph.size());
+    
+    for (auto &[key_node, adjs] : current_graph) {
+        for (node adj : adjs) {
+            boost::add_edge(key_node, adj, boost_graph);
+        }
+    }
+    
+    bool cuurently_planar;
+    for (std::pair<node, node> edge : input_edges) {
+    // first check if this edge is already in the graph
+    
+        if (!graph_contains_edge(current_graph, edge)) {
+            boost::add_edge(edge.first, edge.second, boost_graph);
+            add_edge(current_graph, edge.first, edge.second);
+
+            currently_planar = boyer_myrvold_planarity_test(boost_graph);
+            if (!currently_planar) {
+                boost::remove_edge(edge.first, edge.second, boost_graph);
+                remove_edge(current_graph, edge.first, edge.second);
+            }
+        }
+    }
+    
+    dedup(current_graph); 
+    
+    if (!boyer_myrvold_test(current_graph)) {
+	std::cout << "algo::maximal_planar - NOT PLANAR\n";
+	exit(EXIT_FAILURE);
+    }
+
+    return num_edges(current_graph);
+}

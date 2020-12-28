@@ -193,13 +193,26 @@ adjacency_list to_adj_list(const edge_list &edges) {
     return adj_list;
 }
 
-// TODO NEED TO DEDUP
+// TODO deduping method is kind of hacky here, should be better
 edge_list to_edge_list(const adjacency_list &adj_list) {
     edge_list edges_out;
+    std::unordered_set<std::string> ledger;
 
     for (auto &[key_node, adjs] : adj_list) {
         for (node adj : adjs) {
-            edges_out.push_back(std::make_pair(key_node, adj));
+            std::string edge_repr_0 = std::to_string(key_node) + " " + 
+                std::to_string(adj);
+            std::string edge_repr_1 = std::to_string(adj) + " " + 
+                std::to_string(key_node);
+
+            auto search_0 = ledger.find(edge_repr_0);
+            auto search_1 = ledger.find(edge_repr_1);
+
+            if (search_0 == ledger.end() && search_1 == ledger.end()) {
+                edges_out.push_back(std::make_pair(key_node, adj));
+                ledger.insert(edge_repr_0);
+                ledger.insert(edge_repr_1);
+            }
         }
     }
 
@@ -341,4 +354,36 @@ void write_graph(const adjacency_list &adj_list,
     }
 
     file_out.close();
+}
+
+bool graph_contains_edge(adjacency_list &adj_list, 
+	std::pair<node, node> edge) {
+    bool result = false;
+    
+    auto search = std::find(adj_list.at(edge.first).begin(), 
+	    adj_list.at(edge.first).end(), edge.second);
+    if (search != adj_list.at(edge.first).end()) {
+	result = true;
+    }
+
+    return result;
+}
+
+void remove_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
+  for (auto it = adj_list.at(node_0).begin(); it != adj_list.at(node_0).end(); ) {
+      if (*it == node_1) {
+	  adj_list.at(node_0).erase(it);
+      } else {
+	  ++it;
+      }
+  }
+  for (auto it = adj_list.at(node_1).begin(); it != adj_list.at(node_1).end(); )
+{
+      if (*it == node_0) {
+	  adj_list.at(node_1).erase(it);
+      } else {
+	  ++it;
+      }
+  }
+
 }

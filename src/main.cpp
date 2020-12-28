@@ -15,7 +15,8 @@ int main(int argc, char *argv[]) {
     desc.add_options()("help,h", "display help message")
         ("input,i", po::value<std::string>()->required(), "input file path");
     
-    size_t num_replicates = 10;
+    //size_t num_replicates = 10;
+    size_t num_replicates = 1;
 
     po::variables_map var_map;
 
@@ -59,7 +60,8 @@ int main(int argc, char *argv[]) {
     // dedup input graph
     dedup(input_graph);
     
-    std::vector<int> thread_nums {1, 2, 4, 8, 16, 32, 64};
+    std::vector<int> thread_nums {8};
+    //std::vector<int> thread_nums {1, 2, 4, 8, 16, 32, 64};
      
     for (int threads : thread_nums) {
 	BOOST_LOG_TRIVIAL(info) << "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$";
@@ -78,14 +80,21 @@ int main(int argc, char *argv[]) {
 
 	    size_t input_n_edges = num_edges(input_graph);
 	    size_t result_n_edges = num_edges(result_graph);
+            size_t result_n_nodes = result_graph.size();
+            float edge_retention = (float) result_n_edges / (float) input_n_edges;
+            float maximal_edge_retention = (float) maximal_planar(input_graph, 
+                    result_graph) / float(input_n_edges);
+            
+            float input_density = (float) (2 * input_n_edges) / (float) (input_graph.size() * (input_graph.size() - 1));
 
-	    BOOST_LOG_TRIVIAL(info) << "Execution time: " << elapsed.count() << "s";
+	    BOOST_LOG_TRIVIAL(info) << "Execution time: " << elapsed.count() << "s"
 	    BOOST_LOG_TRIVIAL(info) << "Initial graph - " << "nodes: " << input_graph.size()
 		<< " edges: " << input_n_edges;
-	    BOOST_LOG_TRIVIAL(info) << "Result graph - " << "nodes: " << result_graph.size()
+	    BOOST_LOG_TRIVIAL(info) << "Result graph - " << "nodes: " << result
 		<< " edges: " << result_n_edges;
 	    BOOST_LOG_TRIVIAL(info) << "Percent edges retained: "
-		<< (float) result_n_edges / (float) input_n_edges * 100;
+		<< edge_retention;
+            BOOST_LOG_TRIVIAL(info) << "$nodes|" << input_graph.size() << "|edge_retention|" << edge_retention << "|maximal_planar_edge_retention|" << maximal_edge_retention << "|input_density|" << input_density << "$";
 	}
     }
     return 0;
