@@ -28,8 +28,8 @@ typedef std::tuple<edge_list, std::unordered_map<std::string, node>,
 typedef std::unordered_map<node, std::vector<node>> adjacency_list;
 
 void log_init() {
-    std::string log_format = "[%TimeStamp%] [%Severity%] [%Message%]";
-    std::string log_path = "planarity_filter.log";
+    std::string log_format = "[%TimeStamp%] [%Message%]";
+    std::string log_path = "density_trial.log";
     boost::log::add_file_log(log_path, boost::log::keywords::format = log_format,
                              boost::log::keywords::open_mode = std::ios_base::app);
     boost::log::add_console_log(std::cout, boost::log::keywords::format = log_format);

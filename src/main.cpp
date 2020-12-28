@@ -87,10 +87,10 @@ int main(int argc, char *argv[]) {
             
             float input_density = (float) (2 * input_n_edges) / (float) (input_graph.size() * (input_graph.size() - 1));
 
-	    BOOST_LOG_TRIVIAL(info) << "Execution time: " << elapsed.count() << "s"
+	    BOOST_LOG_TRIVIAL(info) << "Execution time: " << elapsed.count() << "s";
 	    BOOST_LOG_TRIVIAL(info) << "Initial graph - " << "nodes: " << input_graph.size()
 		<< " edges: " << input_n_edges;
-	    BOOST_LOG_TRIVIAL(info) << "Result graph - " << "nodes: " << result
+	    BOOST_LOG_TRIVIAL(info) << "Result graph - " << "nodes: " << result_n_nodes
 		<< " edges: " << result_n_edges;
 	    BOOST_LOG_TRIVIAL(info) << "Percent edges retained: "
 		<< edge_retention;

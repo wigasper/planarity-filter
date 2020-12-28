@@ -345,7 +345,7 @@ size_t maximal_planar(adjacency_list &input_graph, adjacency_list &current_graph
         }
     }
     
-    bool cuurently_planar;
+    bool currently_planar;
     for (std::pair<node, node> edge : input_edges) {
     // first check if this edge is already in the graph
     
