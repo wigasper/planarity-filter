@@ -138,7 +138,7 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
                 for (node z : y_adjs) {
                     search = nu.find(z);
                     auto aux_search = aux.find(z);
-                    if (search != nu.end() && aux_search != nu.end()) {
+                    if (search != nu.end() && aux_search != aux.end()) {
 
                         // add the edges to out, again, this is not super
                         // clear right now and should be cleaned up. possibly
