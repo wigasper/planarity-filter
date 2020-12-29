@@ -82,8 +82,7 @@ int main(int argc, char *argv[]) {
 	    size_t result_n_edges = num_edges(result_graph);
             size_t result_n_nodes = result_graph.size();
             float edge_retention = (float) result_n_edges / (float) input_n_edges;
-            float maximal_edge_retention = (float) maximal_planar(input_graph, 
-                    result_graph) / float(input_n_edges);
+            float maximal_edge_retention = (float) maximal_planar(input_graph) / float(input_n_edges);
             
             float input_density = (float) (2 * input_n_edges) / (float) (input_graph.size() * (input_graph.size() - 1));
 

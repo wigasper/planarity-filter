@@ -335,21 +335,35 @@ adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
 // this is kind of sloppy and based on the premise that the 
 // output graph (current_graph) is unneeded for speed to avoid 
 // a big data copy
-size_t maximal_planar(adjacency_list &input_graph, adjacency_list &current_graph ) {
+//size_t maximal_planar(adjacency_list &input_graph, adjacency_list &current_graph ) {
+size_t maximal_planar(adjacency_list &input_graph) {
+    adjacency_list current_graph;
+
+    for (auto &[key_node, _adjs] : input_graph) {
+	add_node(current_graph, key_node);
+    }
+
     edge_list input_edges = to_edge_list(input_graph);
+
+    ////////////////////////
+    std::mt19937 generator(42);
+    std::shuffle(input_edges.begin(), input_edges.end(), generator);
+    ////////////////////////
+
     boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS> boost_graph(input_graph.size());
     
+    /*
     for (auto &[key_node, adjs] : current_graph) {
         for (node adj : adjs) {
             boost::add_edge(key_node, adj, boost_graph);
         }
     }
-    
+    */
     bool currently_planar;
     for (std::pair<node, node> edge : input_edges) {
     // first check if this edge is already in the graph
     
-        if (!graph_contains_edge(current_graph, edge)) {
+        //if (!graph_contains_edge(current_graph, edge)) {
             boost::add_edge(edge.first, edge.second, boost_graph);
             add_edge(current_graph, edge.first, edge.second);
 
@@ -358,7 +372,7 @@ size_t maximal_planar(adjacency_list &input_graph, adjacency_list &current_graph
                 boost::remove_edge(edge.first, edge.second, boost_graph);
                 remove_edge(current_graph, edge.first, edge.second);
             }
-        }
+        //}
     }
     
     dedup(current_graph); 
