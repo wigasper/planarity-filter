@@ -125,7 +125,7 @@ void add_diamonds(const node x, const adjacency_list &adj_list,
 		    for (node w : z_adjs) {
 			search = nu.find(w);
 			aux_search = aux.find(w);
-			if (search != nu.end() && aux_search != nu.end()) {
+			if (search != nu.end() && aux_search != aux.end()) {
 			    out.push_back(x);
 			    out.push_back(y);
 			    out.push_back(x);
