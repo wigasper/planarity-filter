@@ -1,4 +1,4 @@
-![](https://github.com/wigasper/planarity-filter/workflows/build/badge.svg)
+![](https://github.com/wigasper/planarity-filter/workflows/build/badge.svg) ![](https://github.com/wigasper/planarity-filter/workflows/deploy/badge.svg)
 
 # planarity-filter
 
