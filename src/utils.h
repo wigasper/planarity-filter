@@ -65,6 +65,8 @@ std::vector<std::string> parse_line(std::string line) {
     return vec_out;
 }
 
+// Loads an edge list from file to a representation where each 
+// node is an int. Records the original node names in maps
 load_result load_edge_list(const std::string file_path) {
     edge_list edge_list_out;
     std::unordered_map<std::string, node> node_ids;
@@ -105,14 +107,18 @@ load_result load_edge_list(const std::string file_path) {
     return std::make_tuple(edge_list_out, node_ids, node_ids_rev);
 }
 
+// Adds a node to the adjacency_list
 void add_node(adjacency_list &adj_list, const node key_node) {
     auto search = adj_list.find(key_node);
+    // Avoid erasing the adjacents if the node is already in the map
     if (search == adj_list.end()) {
         adj_list.insert({key_node, std::vector<node> {}});
     }
 
 }
 
+// Adds an edge to the adjacency list
+// Adds the nodes also if they don't exist
 void add_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
     auto search = adj_list.find(node_0);
     if (search == adj_list.end()) {
@@ -128,6 +134,8 @@ void add_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
     adj_list.at(node_1).push_back(node_0);
 }
 
+// Removes duplicate edges from an adjacency list
+//
 // this could also just be accomplished by using unordered_sets instead of
 // vecs for adjacents
 void dedup(adjacency_list &adj_list) {
@@ -143,6 +151,8 @@ void dedup(adjacency_list &adj_list) {
     }
 }
 
+// Converts an edge list to an adjacency list
+//
 // NOTE does not load self loops
 adjacency_list to_adj_list(const edge_list &edges) {
     adjacency_list adj_list;
@@ -174,6 +184,8 @@ adjacency_list to_adj_list(const edge_list &edges) {
     return adj_list;
 }
 
+// Converts an adjacency list to an edge list
+//
 // TODO deduping method is kind of hacky here, should be better
 edge_list to_edge_list(const adjacency_list &adj_list) {
     edge_list edges_out;
@@ -200,6 +212,7 @@ edge_list to_edge_list(const adjacency_list &adj_list) {
     return edges_out;
 }
 
+// Performs the Boyer Myrvold planarity test on an adjacency list
 bool boyer_myrvold_test(const adjacency_list &adj_list) {
     const edge_list edges = to_edge_list(adj_list);
     const size_t n_nodes = adj_list.size();
@@ -212,7 +225,7 @@ bool boyer_myrvold_test(const adjacency_list &adj_list) {
     return boyer_myrvold_planarity_test(boost_graph);
 }
 
-// returns the first node of maximum degree found
+// Returns the first node of maximum degree found
 node get_max_degree_node(const adjacency_list &adj_list) {
     size_t max_deg = 0;
     // TODO this is bad should probably be properly initialized w/ a value
@@ -227,7 +240,9 @@ node get_max_degree_node(const adjacency_list &adj_list) {
     return max_deg_node;
 }
 
-// returns the first node of maximum degree found
+// Returns the first node of maximum degree found
+//
+// NOTE this is unused, leaving for now
 node get_max_degree_node(const std::unordered_set<node> &node_set, const adjacency_list &adj_list) {
     size_t max_deg = 0;
     // TODO this is bad should probably be properly initialized w/ a value
@@ -244,7 +259,7 @@ node get_max_degree_node(const std::unordered_set<node> &node_set, const adjacen
 }
 
 // NOTE this is unused, but leaving for now
-// use BFS to get all nodes dist hops or more away
+// Use BFS to get all nodes dist hops or more away
 // maybe this should be in algo.h
 std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
                                     const adjacency_list &adj_list) {
@@ -286,7 +301,7 @@ std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
 }
 
 // NOTE: this is unused, but leaving for now
-// get the intersection of the sets, modifying set_a
+// Get the intersection of the sets, modifying set_a
 void intersection(std::unordered_set<node> &set_a, const std::unordered_set<node> set_b) {
     for (auto iter = set_a.begin(); iter != set_a.end();) {
         auto search = set_b.find(*iter);
@@ -298,6 +313,7 @@ void intersection(std::unordered_set<node> &set_a, const std::unordered_set<node
     }
 }
 
+// Gets the number of edges in an adjacency list representation of the graph
 size_t num_edges(const adjacency_list &adj_list) {
     size_t n_edges = 0;
 
@@ -308,6 +324,7 @@ size_t num_edges(const adjacency_list &adj_list) {
     return n_edges / 2;
 }
 
+// Write the output graph to file
 void write_graph(const adjacency_list &adj_list, 
 	const std::unordered_map<node, std::string> node_labels, 
 	const std::string file_path) {
