@@ -56,9 +56,8 @@ std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
     return components;
 }
 
-// connects components with 1 edge from the original graph, if possible
-// TODO fix this
-void connect_components(adjacency_list &adj_list, const std::vector<std::vector<node>> &components,
+void connect_components(adjacency_list &adj_list, 
+	const std::vector<std::vector<node>> &components,
                         const adjacency_list &original_graph) {
     std::unordered_map<size_t, visited_state> state;
     std::unordered_map<node, size_t> node_to_comp;
@@ -90,6 +89,18 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
                     if (state.at(node_1_comp) == UNVISITED && current_comp != node_1_comp) {
                         state.at(node_1_comp) = QUEUED;
 			edges.push_back(std::make_pair(node_0, node_1));
+			
+			std::vector<node> node_1_adjs = adj_list.at(node_1);
+			// TODO add logic for triangles the other way
+			for (node node_2 : node_1_adjs) {
+			    auto adjs_search = std::find(adjs.begin(), adjs.end(),
+				      node_2);
+			    if (adjs_search != adjs.end()) {
+				edges.push_back(std::make_pair(node_0, node_2));
+				break;
+			    }
+			}
+
                         queue.push_back(node_1_comp);
                     }
                 }
