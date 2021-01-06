@@ -3,11 +3,10 @@
 #include <deque>
 #include <random>
 
-#define DIST 4
-#define MAX_ACTIVE_SIZE 5000
-
 enum visited_state { UNVISITED, VISITED, QUEUED };
 
+// Starting at a node, performs a BFS to identify the entire component that
+// the node is in
 std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_list) {
     std::deque<node> queue;
     std::unordered_set<node> visited;
@@ -37,6 +36,8 @@ std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_lis
     return component;
 }
 
+// Given an adjancey list, returns a vec of vec of nodes, where each vec of
+// nodes are all the nodes in a single connected component
 std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
     std::unordered_set<node> unvisited_nodes;
 
@@ -59,9 +60,11 @@ std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
     return components;
 }
 
-// connects components with 1 edge from the original graph, if possible
-
-void connect_components(adjacency_list &adj_list, const std::vector<std::vector<node>> &components,
+// Given an adjacency list, a vector of vector of nodes giving the components, 
+// and the original graph, this connects the components with a single edge or 
+// a triangle if possible, if these edges were present in the original graph
+void connect_components(adjacency_list &adj_list, 
+	const std::vector<std::vector<node>> &components,
                         const adjacency_list &original_graph) {
     std::unordered_map<size_t, visited_state> state;
     std::unordered_map<node, size_t> node_to_comp;
@@ -93,11 +96,33 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
                     if (state.at(node_1_comp) == UNVISITED && current_comp != node_1_comp) {
                         state.at(node_1_comp) = QUEUED;
 			edges.push_back(std::make_pair(node_0, node_1));
+			
+			std::vector<node> node_1_adjs = adj_list.at(node_1);
+			// TODO add logic for triangles the other way
+			for (node node_2 : node_1_adjs) {
+			    auto adjs_search = std::find(adjs.begin(), adjs.end(),
+				      node_2);
+			    if (adjs_search != adjs.end()) {
+				edges.push_back(std::make_pair(node_0, node_2));
+				break;
+			    }
+			}
+
                         queue.push_back(node_1_comp);
                     }
                 }
             }
         }
+
+	if (queue.empty()) {
+	    // search for an unvisited component and add it to the queue
+	    for (auto &[comp, vis_state] : state) {
+		if (vis_state == UNVISITED) {
+		    queue.push_back(comp);
+		    break;
+		}
+	    }
+	}
     }
 
     for (std::pair<node, node> edge : edges) {
@@ -105,7 +130,336 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
     }
 }
 
-// TODO: also note: returning a vec<node> here, this is basically an
+// Adds houses, w/ alternate orbit node, back to the graph from x
+void add_houses_alt(const node x, const adjacency_list &adj_list,
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
+    
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+    for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector<node> y_adjs = adj_list.at(y);
+	    
+	    bool found = false;
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != aux.end()) {
+		    std::vector<node> z_adjs = adj_list.at(z);
+		    for (node w : z_adjs) {
+			search = nu.find(w);
+			auto y_search = std::find(y_adjs.begin(), y_adjs.end(), w);
+			
+			if (search != nu.end() && y_search != y_adjs.end()) {
+			    for (node v : y_adjs) {
+				if (v != z && v != w) {
+				    std::vector<node> w_adjs = adj_list.at(w);
+				    search = nu.find(v);
+				    auto w_search = std::find(w_adjs.begin(), w_adjs.end(), v);
+				    if (search != nu.end() && w_search != w_adjs.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory		
+					out.push_back(x);
+					out.push_back(y);
+					out.push_back(x);
+					out.push_back(z);
+					out.push_back(y);
+					out.push_back(z);
+					out.push_back(y);
+					out.push_back(w);
+					out.push_back(z);
+					out.push_back(w);
+					out.push_back(y);
+					out.push_back(v);
+					out.push_back(w);
+					out.push_back(v);
+
+					active.push_front(y);
+					active.push_front(z);
+					active.push_front(w);
+					active.push_front(v);
+
+					nu.erase(y);
+					nu.erase(z);
+					nu.erase(w);
+					nu.erase(v);
+
+					aux.erase(y);
+					aux.erase(z);
+					aux.erase(w);
+					aux.erase(v);
+
+					found = true;
+
+					break;
+				    }
+				}
+			    }
+			}
+			if (found) {break;}
+		    } 		
+		}
+		if (found) {break;}
+	    }
+	}
+    }
+}
+
+// Adds houses back to the graph from x
+void add_houses(const node x, const adjacency_list &adj_list,
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
+    
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+     for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector<node> y_adjs = adj_list.at(y);
+	    
+	    bool found = false;
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != aux.end()) {
+		    std::vector<node> z_adjs = adj_list.at(z);
+		    for (node w : z_adjs) {
+			search = nu.find(w);
+			aux_search = aux.find(w);
+			
+			if (search != nu.end() && aux_search != aux.end()) {
+			    for (node v : y_adjs) {
+				if (v != z && v != w) {
+				    search = nu.find(v);
+				    aux_search = aux.find(v);
+				    if (search != nu.end() && aux_search != aux.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory			
+					out.push_back(x);
+					out.push_back(y);
+					out.push_back(x);
+					out.push_back(z);
+					out.push_back(y);
+					out.push_back(z);
+					out.push_back(x);
+					out.push_back(w);
+					out.push_back(z);
+					out.push_back(w);
+					out.push_back(y);
+					out.push_back(v);
+					out.push_back(x);
+					out.push_back(v);
+
+					active.push_front(y);
+					active.push_front(z);
+					active.push_front(w);
+					active.push_front(v);
+
+					nu.erase(y);
+					nu.erase(z);
+					nu.erase(w);
+					nu.erase(v);
+
+					aux.erase(y);
+					aux.erase(z);
+					aux.erase(w);
+					aux.erase(v);
+
+					found = true;
+
+					break;
+				    }
+				}
+			    }
+			}
+			if (found) {break;}
+		    } 		
+		}
+		if (found) {break;}
+	    }
+	}
+    }
+}
+
+// Adds diamonds w/ alternate orbit node back to the graph from X
+void add_diamonds_alt(const node x, const adjacency_list &adj_list,
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
+    
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+     for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector<node> y_adjs = adj_list.at(y);
+	    
+	    bool found = false;
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != aux.end()) {
+		    std::vector<node> z_adjs = adj_list.at(z);
+		    for (node w : z_adjs) {
+			search = nu.find(w);
+			auto aux_search = std::find(y_adjs.begin(), y_adjs.end(), w);
+			if (search != nu.end() && aux_search != y_adjs.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory		    
+			    out.push_back(x);
+			    out.push_back(y);
+			    out.push_back(x);
+			    out.push_back(z);
+			    out.push_back(y);
+			    out.push_back(z);
+			    out.push_back(x);
+			    out.push_back(w);
+			    out.push_back(z);
+			    out.push_back(w);
+
+			    active.push_front(y);
+			    active.push_front(z);
+			    active.push_front(w);
+
+			    nu.erase(y);
+			    nu.erase(z);
+			    nu.erase(w);
+
+			    aux.erase(y);
+			    aux.erase(z);
+			    aux.erase(w);
+
+			    found = true;
+
+			    break;
+			}	    
+		    } 		
+		}
+		if (found) {break;}
+	    }
+	}
+    }
+} 
+
+// Adds diamonds back to the graph from x
+void add_diamonds(const node x, const adjacency_list &adj_list,
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
+    
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+     for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector<node> y_adjs = adj_list.at(y);
+	    
+	    bool found = false;
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != aux.end()) {
+		    std::vector<node> z_adjs = adj_list.at(z);
+		    for (node w : z_adjs) {
+			search = nu.find(w);
+			aux_search = aux.find(w);
+			if (search != nu.end() && aux_search != aux.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory
+			    out.push_back(x);
+			    out.push_back(y);
+			    out.push_back(x);
+			    out.push_back(z);
+			    out.push_back(y);
+			    out.push_back(z);
+			    out.push_back(x);
+			    out.push_back(w);
+			    out.push_back(z);
+			    out.push_back(w);
+
+			    active.push_front(y);
+			    active.push_front(z);
+			    active.push_front(w);
+
+			    nu.erase(y);
+			    nu.erase(z);
+			    nu.erase(w);
+
+			    aux.erase(y);
+			    aux.erase(z);
+			    aux.erase(w);
+
+			    found = true;
+
+			    break;
+			}	    
+		    } 		
+		}
+		if (found) {break;}
+	    }
+	}
+    }
+}  
+
+// Adds triangles back to the graph from x
+void add_triangles(const node x, const adjacency_list &adj_list, 
+    std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+
+    for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector<node> y_adjs = adj_list.at(y);
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != aux.end()) {
+
+		    // add the edges to out, again, this is not super
+		    // clear right now and should be cleaned up. possibly
+		    // use matrix abstraction
+		    out.push_back(x);
+		    out.push_back(y);
+		    out.push_back(x);
+		    out.push_back(z);
+		    out.push_back(y);
+		    out.push_back(z);
+
+		    active.push_front(y);
+		    active.push_front(z);
+
+		    nu.erase(y);
+		    nu.erase(z);
+
+		    aux.erase(y);
+		    aux.erase(z);
+
+		    break;
+		}
+	    }
+	}
+    }
+
+}
+
+// Propagate shapes from a given x node, if they exist in the original
+// graph, are planar, and allow for access to each node in the shape later
+//
+// NOTE: returning a vec<node> here, this is basically an
 // edge list or matrix of dim 2, this is not entirely clear. doing it
 // this way just for speed
 std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &adj_list) {
@@ -126,75 +480,34 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
 
         const node x = active.front();
         active.pop_front();
+	add_houses(x, adj_list, nu, out, active);
+	add_houses_alt(x, adj_list, nu, out, active);
+	add_diamonds(x, adj_list, nu, out, active);
+	add_diamonds_alt(x, adj_list, nu, out, active);
+	add_triangles(x, adj_list, nu, out, active);
 
-        std::vector<node> x_adjs = adj_list.at(x);
-        std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
-
-        for (node y : x_adjs) {
-            auto search = nu.find(y);
-            if (search != nu.end()) {
-                std::vector <node> y_adjs = adj_list.at(y);
-
-                for (node z : y_adjs) {
-                    search = nu.find(z);
-                    auto aux_search = aux.find(z);
-                    if (search != nu.end() && aux_search != aux.end()) {
-
-                        // add the edges to out, again, this is not super
-                        // clear right now and should be cleaned up. possibly
-                        // use matrix abstraction
-                        out.push_back(x);
-                        out.push_back(y);
-                        out.push_back(x);
-                        out.push_back(z);
-                        out.push_back(y);
-                        out.push_back(z);
-
-                        active.push_front(y);
-                        active.push_front(z);
-
-                        nu.erase(y);
-                        nu.erase(z);
-
-                        aux.erase(y);
-                        aux.erase(z);
-
-                        break;
-                    }
-                }
-            }
-        }
     }
 
     return out;
 }
 
+// Partitions nodes from the original graph so that the algorithm can 
+// be performed in parallel on each partition
+//
+// First, randomly selects nodes. Then starts adding nodes to each partition
+// using BFS. Finally, just adds leftover nodes to available partitions
 std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list, 
 	const size_t num_partitions) {
     std::vector<adjacency_list> partitions;
 
     std::unordered_set<node> node_set;
-    //size_t num_nodes = node_set.size();
+    size_t num_nodes = node_set.size();
 
     for (auto &[key_node, _adjs] : adj_list) {
 	node_set.insert(key_node);
     }
     
-    //std::random_device RANDOM_DEVICE;
     std::mt19937 generator(42);
-
-
-    // initialize partitions with high degree nodes
-    // 
-    // TODO it would be even better to initialize w/ distant high 
-    // degree nodes
-    /*for (size_t _n = 0; _n < num_partitions; _n++) {
-	node max_deg_node = get_max_degree_node(node_set, adj_list);
-	adjacency_list new_adj_list;
-	add_node(new_adj_list, max_deg_node);
-	node_set.erase(max_deg_node);
-	partitions.push_back(new_adj_list);
-    }*/
 
     for (size_t _ = 0; _ < num_partitions; _++) {
 	std::uniform_int_distribution<> distribution(0, node_set.size() - 1);
@@ -205,8 +518,8 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	add_node(new_adj_list, *iter);
 	node_set.erase(iter);
 	partitions.push_back(new_adj_list);
-    }
-    
+    } 
+
     // add neighbors first
     for (size_t idx = 0; idx < partitions.size(); idx++) {
 	node node_0 = partitions.at(idx).begin()->first;
@@ -228,7 +541,6 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	}
     }
     
-    size_t num_nodes_to_add = node_set.size() / num_partitions;
     // start adding nodes to partitions with BFS
     for (size_t idx = 0; idx < partitions.size(); idx++) {
 	size_t num_nodes_added = 0;
@@ -237,7 +549,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	std::unordered_set<node> visited;
 	queue.push_back(partitions.at(idx).begin()->first);
 
-	while (!queue.empty() && num_nodes_added < num_nodes_to_add) {
+	while (!queue.empty() && num_nodes_added < num_nodes / num_partitions) {
 	    const size_t queue_len = queue.size();
 
 	    for (size_t _ = 0; _ < queue_len; _++) {
@@ -298,6 +610,9 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
     return partitions;
 } 
 
+// The main algorithm routine, driver of everything here.
+// Partitions nodes, then runs the graphlet propagation from the maximum
+// degree node in each partition. Connects components at the end, if possible
 adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
     adjacency_list out;
 
@@ -324,63 +639,9 @@ adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
 
     std::vector<std::vector<node>> components = get_components(out);
     
-    // TODO while loop this? can there still be disconnected components after running?
     if (components.size() > 1) {
         connect_components(out, components, adj_list);
     }
 
     return out;
-}
-
-// this is kind of sloppy and based on the premise that the 
-// output graph (current_graph) is unneeded for speed to avoid 
-// a big data copy
-//size_t maximal_planar(adjacency_list &input_graph, adjacency_list &current_graph ) {
-size_t maximal_planar(adjacency_list &input_graph) {
-    adjacency_list current_graph;
-
-    for (auto &[key_node, _adjs] : input_graph) {
-	add_node(current_graph, key_node);
-    }
-
-    edge_list input_edges = to_edge_list(input_graph);
-
-    ////////////////////////
-    std::mt19937 generator(42);
-    std::shuffle(input_edges.begin(), input_edges.end(), generator);
-    ////////////////////////
-
-    boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS> boost_graph(input_graph.size());
-    
-    /*
-    for (auto &[key_node, adjs] : current_graph) {
-        for (node adj : adjs) {
-            boost::add_edge(key_node, adj, boost_graph);
-        }
-    }
-    */
-    bool currently_planar;
-    for (std::pair<node, node> edge : input_edges) {
-    // first check if this edge is already in the graph
-    
-        //if (!graph_contains_edge(current_graph, edge)) {
-            boost::add_edge(edge.first, edge.second, boost_graph);
-            add_edge(current_graph, edge.first, edge.second);
-
-            currently_planar = boyer_myrvold_planarity_test(boost_graph);
-            if (!currently_planar) {
-                boost::remove_edge(edge.first, edge.second, boost_graph);
-                remove_edge(current_graph, edge.first, edge.second);
-            }
-        //}
-    }
-    
-    dedup(current_graph); 
-    
-    if (!boyer_myrvold_test(current_graph)) {
-	std::cout << "algo::maximal_planar - NOT PLANAR\n";
-	exit(EXIT_FAILURE);
-    }
-
-    return num_edges(current_graph);
 }
