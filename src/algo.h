@@ -3,9 +3,6 @@
 #include <deque>
 #include <random>
 
-#define DIST 4
-#define MAX_ACTIVE_SIZE 5000
-
 enum visited_state { UNVISITED, VISITED, QUEUED };
 
 std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_list) {
