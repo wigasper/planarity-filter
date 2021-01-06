@@ -6,6 +6,13 @@
 large graphs through edge addition via graphlets. Currently only undirected, unweighted
 graphs are supported.
 
+Currently requires Boost for C++ for graph libraries, argument parsing, and logging. 
+The dynamic linking associated with logging may not be strictly necessary, so if this is an issue
+this dependency can be eliminated --- just open an issue.
+
+A Linux binary is included in the releases, if additional target OSes are needed please just 
+open an issue and I will add this to the CD.
+
 To build:
 
 ```bash
