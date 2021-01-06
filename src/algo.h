@@ -95,6 +95,16 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
                 }
             }
         }
+
+	if (queue.empty()) {
+	    // search for an unvisited component and add it to the queue
+	    for (auto &[comp, vis_state] : state) {
+		if (vis_state == UNVISITED) {
+		    queue.push_back(comp);
+		    break;
+		}
+	    }
+	}
     }
 
     for (std::pair<node, node> edge : edges) {
