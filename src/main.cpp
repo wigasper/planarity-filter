@@ -6,11 +6,30 @@
 
 #include "boost/program_options.hpp"
 
+#include "boost/log/core.hpp"
+#include "boost/log/expressions.hpp"
+#include "boost/log/trivial.hpp"
+#include "boost/log/utility/setup/common_attributes.hpp"
+#include "boost/log/utility/setup/console.hpp"
+#include "boost/log/utility/setup/file.hpp"
+
+// Initializes the logger
+void log_init() {
+      std::string log_format = "[%TimeStamp%] [%Severity%] [%Message%]";
+      std::string log_path = "planarity_filter.log";
+      boost::log::add_file_log(log_path, boost::log::keywords::format = log_format,
+                               boost::log::keywords::open_mode = std::ios_base::app);
+      boost::log::add_console_log(std::cout, boost::log::keywords::format = log_format);
+      boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+      boost::log::add_common_attributes();
+  }
+
 int main(int argc, char *argv[]) {
     log_init();
     
     int num_threads = 1;
-
+    
+    // Get args
     namespace po = boost::program_options;
 
     po::options_description desc("Arguments");
@@ -37,6 +56,7 @@ int main(int argc, char *argv[]) {
         return 2;
     }
 
+    // Log metadata about the run
     BOOST_LOG_TRIVIAL(info) << "#######################################";
     BOOST_LOG_TRIVIAL(info) << "New run, options listed below";
     BOOST_LOG_TRIVIAL(info) << "git branch: " << GIT_BRANCH;
