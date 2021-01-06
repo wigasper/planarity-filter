@@ -8,13 +8,6 @@
 #include <unordered_set>
 #include <regex>
 
-#include "boost/log/core.hpp"
-#include "boost/log/expressions.hpp"
-#include "boost/log/trivial.hpp"
-#include "boost/log/utility/setup/common_attributes.hpp"
-#include "boost/log/utility/setup/console.hpp"
-#include "boost/log/utility/setup/file.hpp"
-
 #include "boost/graph/adjacency_list.hpp"
 #include "boost/graph/boyer_myrvold_planar_test.hpp"
 #include "boost/graph/graph_traits.hpp"
@@ -26,16 +19,6 @@ typedef std::vector<std::pair<node, node>> edge_list;
 typedef std::tuple<edge_list, std::unordered_map<std::string, node>,
             std::unordered_map<node, std::string>> load_result;
 typedef std::unordered_map<node, std::vector<node>> adjacency_list;
-
-void log_init() {
-    std::string log_format = "[%TimeStamp%] [%Severity%] [%Message%]";
-    std::string log_path = "planarity_filter.log";
-    boost::log::add_file_log(log_path, boost::log::keywords::format = log_format,
-                             boost::log::keywords::open_mode = std::ios_base::app);
-    boost::log::add_console_log(std::cout, boost::log::keywords::format = log_format);
-    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
-    boost::log::add_common_attributes();
-}
 
 // trims the whitespace from a string
 std::string trim_whitespace(std::string a_string) {
@@ -130,8 +113,6 @@ void add_node(adjacency_list &adj_list, const node key_node) {
 
 }
 
-// currently will panic if the adj_list does not already have the
-// nodes as keys. maybe checking here but this will slow things down
 void add_edge(adjacency_list &adj_list, const node node_0, const node node_1) {
     auto search = adj_list.find(node_0);
     if (search == adj_list.end()) {
@@ -193,13 +174,26 @@ adjacency_list to_adj_list(const edge_list &edges) {
     return adj_list;
 }
 
-// TODO NEED TO DEDUP
+// TODO deduping method is kind of hacky here, should be better
 edge_list to_edge_list(const adjacency_list &adj_list) {
     edge_list edges_out;
+    std::unordered_set<std::string> ledger;
 
     for (auto &[key_node, adjs] : adj_list) {
         for (node adj : adjs) {
-            edges_out.push_back(std::make_pair(key_node, adj));
+            std::string edge_repr_0 = std::to_string(key_node) + " " + 
+                std::to_string(adj);
+            std::string edge_repr_1 = std::to_string(adj) + " " + 
+                std::to_string(key_node);
+
+            auto search_0 = ledger.find(edge_repr_0);
+            auto search_1 = ledger.find(edge_repr_1);
+
+            if (search_0 == ledger.end() && search_1 == ledger.end()) {
+                edges_out.push_back(std::make_pair(key_node, adj));
+                ledger.insert(edge_repr_0);
+                ledger.insert(edge_repr_1);
+            }
         }
     }
 
@@ -249,6 +243,7 @@ node get_max_degree_node(const std::unordered_set<node> &node_set, const adjacen
     return max_deg_node;
 }
 
+// NOTE this is unused, but leaving for now
 // use BFS to get all nodes dist hops or more away
 // maybe this should be in algo.h
 std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
@@ -290,6 +285,7 @@ std::unordered_set<node> get_distant_nodes(const node source, const size_t dist,
     return nodes_out;
 }
 
+// NOTE: this is unused, but leaving for now
 // get the intersection of the sets, modifying set_a
 void intersection(std::unordered_set<node> &set_a, const std::unordered_set<node> set_b) {
     for (auto iter = set_a.begin(); iter != set_a.end();) {
