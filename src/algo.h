@@ -5,6 +5,8 @@
 
 enum visited_state { UNVISITED, VISITED, QUEUED };
 
+// Starting at a node, performs a BFS to identify the entire component that
+// the node is in
 std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_list) {
     std::deque<node> queue;
     std::unordered_set<node> visited;
@@ -34,6 +36,8 @@ std::vector<node> node_bfs(const node &start_node, const adjacency_list &adj_lis
     return component;
 }
 
+// Given an adjancey list, returns a vec of vec of nodes, where each vec of
+// nodes are all the nodes in a single connected component
 std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
     std::unordered_set<node> unvisited_nodes;
 
@@ -56,6 +60,9 @@ std::vector<std::vector<node>> get_components(const adjacency_list adj_list) {
     return components;
 }
 
+// Given an adjacency list, a vector of vector of nodes giving the components, 
+// and the original graph, this connects the components with a single edge or 
+// a triangle if possible, if these edges were present in the original graph
 void connect_components(adjacency_list &adj_list, 
 	const std::vector<std::vector<node>> &components,
                         const adjacency_list &original_graph) {
@@ -123,9 +130,10 @@ void connect_components(adjacency_list &adj_list,
     }
 }
 
-
+// Adds houses, w/ alternate orbit node, back to the graph from x
 void add_houses_alt(const node x, const adjacency_list &adj_list,
-	std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
     
     std::vector<node> x_adjs = adj_list.at(x);
     std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
@@ -152,6 +160,10 @@ void add_houses_alt(const node x, const adjacency_list &adj_list,
 				    search = nu.find(v);
 				    auto w_search = std::find(w_adjs.begin(), w_adjs.end(), v);
 				    if (search != nu.end() && w_search != w_adjs.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory		
 					out.push_back(x);
 					out.push_back(y);
 					out.push_back(x);
@@ -198,8 +210,10 @@ void add_houses_alt(const node x, const adjacency_list &adj_list,
     }
 }
 
+// Adds houses back to the graph from x
 void add_houses(const node x, const adjacency_list &adj_list,
-	std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
     
     std::vector<node> x_adjs = adj_list.at(x);
     std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
@@ -225,6 +239,10 @@ void add_houses(const node x, const adjacency_list &adj_list,
 				    search = nu.find(v);
 				    aux_search = aux.find(v);
 				    if (search != nu.end() && aux_search != aux.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory			
 					out.push_back(x);
 					out.push_back(y);
 					out.push_back(x);
@@ -271,8 +289,10 @@ void add_houses(const node x, const adjacency_list &adj_list,
     }
 }
 
+// Adds diamonds w/ alternate orbit node back to the graph from X
 void add_diamonds_alt(const node x, const adjacency_list &adj_list,
-	std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
     
     std::vector<node> x_adjs = adj_list.at(x);
     std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
@@ -292,6 +312,10 @@ void add_diamonds_alt(const node x, const adjacency_list &adj_list,
 			search = nu.find(w);
 			auto aux_search = std::find(y_adjs.begin(), y_adjs.end(), w);
 			if (search != nu.end() && aux_search != y_adjs.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory		    
 			    out.push_back(x);
 			    out.push_back(y);
 			    out.push_back(x);
@@ -327,8 +351,10 @@ void add_diamonds_alt(const node x, const adjacency_list &adj_list,
     }
 } 
 
+// Adds diamonds back to the graph from x
 void add_diamonds(const node x, const adjacency_list &adj_list,
-	std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
+	std::unordered_set<node> &nu, std::vector<node> &out, 
+	std::deque<node> &active) {
     
     std::vector<node> x_adjs = adj_list.at(x);
     std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
@@ -348,6 +374,10 @@ void add_diamonds(const node x, const adjacency_list &adj_list,
 			search = nu.find(w);
 			aux_search = aux.find(w);
 			if (search != nu.end() && aux_search != aux.end()) {
+			    // Here edges are just being added in a vector
+			    // and the pair relationships are accounted for 
+			    // later. Doing it this way to keep edges in 
+			    // contiguous memory
 			    out.push_back(x);
 			    out.push_back(y);
 			    out.push_back(x);
@@ -383,6 +413,7 @@ void add_diamonds(const node x, const adjacency_list &adj_list,
     }
 }  
 
+// Adds triangles back to the graph from x
 void add_triangles(const node x, const adjacency_list &adj_list, 
     std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
     std::vector<node> x_adjs = adj_list.at(x);
@@ -425,7 +456,10 @@ void add_triangles(const node x, const adjacency_list &adj_list,
 
 }
 
-// TODO: also note: returning a vec<node> here, this is basically an
+// Propagate shapes from a given x node, if they exist in the original
+// graph, are planar, and allow for access to each node in the shape later
+//
+// NOTE: returning a vec<node> here, this is basically an
 // edge list or matrix of dim 2, this is not entirely clear. doing it
 // this way just for speed
 std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &adj_list) {
@@ -457,6 +491,11 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
     return out;
 }
 
+// Partitions nodes from the original graph so that the algorithm can 
+// be performed in parallel on each partition
+//
+// First, randomly selects nodes. Then starts adding nodes to each partition
+// using BFS. Finally, just adds leftover nodes to available partitions
 std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list, 
 	const size_t num_partitions) {
     std::vector<adjacency_list> partitions;
@@ -571,6 +610,9 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
     return partitions;
 } 
 
+// The main algorithm routine, driver of everything here.
+// Partitions nodes, then runs the graphlet propagation from the maximum
+// degree node in each partition. Connects components at the end, if possible
 adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
     adjacency_list out;
 
@@ -597,7 +639,6 @@ adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
 
     std::vector<std::vector<node>> components = get_components(out);
     
-    // TODO while loop this? can there still be disconnected components after running?
     if (components.size() > 1) {
         connect_components(out, components, adj_list);
     }
