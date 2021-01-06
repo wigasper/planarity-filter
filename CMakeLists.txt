@@ -29,18 +29,19 @@ configure_file(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "-O3 -DBOOST_LOG_DYN_LINK -fopenmp")
-# note, for HCC probably need to do:
-# set(CMAKE_CXX_FLAGS "-O3 -DBOOST_LOG_DYN_LINK -lboost_system -lboost_filesystem -lboost_log -lboost_log_setup -fopenmp")
+
+###################################
+# note, for HCC need to do:
+#set(CMAKE_CXX_FLAGS "-O3 -DBOOST_LOG_DYN_LINK -lboost_system -lboost_filesystem -lboost_log -lboost_log_setup -fopenmp")
 # find_package(Boost COMPONENTS filesystem system program_options log log_setup REQUIRED)
+###################################
 
 find_package(Boost COMPONENTS program_options log log_setup REQUIRED)
 
 include_directories(include)
 include_directories(${CMAKE_BINARY_DIR}/generated)
 
-file(GLOB SOURCES "src/*.cpp")
-
-list(REMOVE_ITEM SOURCES "src/tests.cpp")
+file(GLOB SOURCES "src/main.cpp")
 
 add_executable(planarityfilter ${SOURCES})
 
@@ -50,3 +51,11 @@ find_package(OpenMP)
 if(Open_MP_CXX_FOUND)
 	target_link_libraries(MyTarget PUBLIC OpenMP::OpenMP_CXX)
 endif()
+
+# Create testing executable
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+add_executable(run_tests src/tests.cpp)
+target_link_libraries(run_tests ${GTEST_LIBRARIES} pthread)
+
