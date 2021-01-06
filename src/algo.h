@@ -105,6 +105,81 @@ void connect_components(adjacency_list &adj_list, const std::vector<std::vector<
     }
 }
 
+
+void add_houses_alt(const node x, const adjacency_list &adj_list,
+	std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
+    
+    std::vector<node> x_adjs = adj_list.at(x);
+    std::unordered_set<node> aux(x_adjs.begin(), x_adjs.end());
+    for (node y : x_adjs) {
+	auto search = nu.find(y);
+	if (search != nu.end()) {
+	    std::vector<node> y_adjs = adj_list.at(y);
+	    
+	    bool found = false;
+
+	    for (node z : y_adjs) {
+		search = nu.find(z);
+		auto aux_search = aux.find(z);
+		if (search != nu.end() && aux_search != aux.end()) {
+		    std::vector<node> z_adjs = adj_list.at(z);
+		    for (node w : z_adjs) {
+			search = nu.find(w);
+			auto y_search = std::find(y_adjs.begin(), y_adjs.end(), w);
+			
+			if (search != nu.end() && y_search != y_adjs.end()) {
+			    for (node v : y_adjs) {
+				if (v != z && v != w) {
+				    std::vector<node> w_adjs = adj_list.at(w);
+				    search = nu.find(v);
+				    auto w_search = std::find(w_adjs.begin(), w_adjs.end(), v);
+				    if (search != nu.end() && w_search != w_adjs.end()) {
+					out.push_back(x);
+					out.push_back(y);
+					out.push_back(x);
+					out.push_back(z);
+					out.push_back(y);
+					out.push_back(z);
+					out.push_back(y);
+					out.push_back(w);
+					out.push_back(z);
+					out.push_back(w);
+					out.push_back(y);
+					out.push_back(v);
+					out.push_back(w);
+					out.push_back(v);
+
+					active.push_front(y);
+					active.push_front(z);
+					active.push_front(w);
+					active.push_front(v);
+
+					nu.erase(y);
+					nu.erase(z);
+					nu.erase(w);
+					nu.erase(v);
+
+					aux.erase(y);
+					aux.erase(z);
+					aux.erase(w);
+					aux.erase(v);
+
+					found = true;
+
+					break;
+				    }
+				}
+			    }
+			}
+			if (found) {break;}
+		    } 		
+		}
+		if (found) {break;}
+	    }
+	}
+    }
+}
+
 void add_houses(const node x, const adjacency_list &adj_list,
 	std::unordered_set<node> &nu, std::vector<node> &out, std::deque<node> &active) {
     
@@ -353,7 +428,10 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
 
         const node x = active.front();
         active.pop_front();
-
+	add_houses(x, adj_list, nu, out, active);
+	add_houses_alt(x, adj_list, nu, out, active);
+	add_diamonds(x, adj_list, nu, out, active);
+	add_diamonds_alt(x, adj_list, nu, out, active);
 	add_triangles(x, adj_list, nu, out, active);
 
     }
