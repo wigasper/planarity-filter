@@ -460,18 +460,6 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	partitions.push_back(new_adj_list);
     } 
 
-    // initialize partitions with high degree nodes
-    // 
-    // TODO it would be even better to initialize w/ distant high 
-    // degree nodes
-/*    for (size_t _n = 0; _n < num_partitions; _n++) {
-	node max_deg_node = get_max_degree_node(node_set, adj_list);
-	adjacency_list new_adj_list;
-	add_node(new_adj_list, max_deg_node);
-	node_set.erase(max_deg_node);
-	partitions.push_back(new_adj_list);
-    }*/
-    
     // add neighbors first
     for (size_t idx = 0; idx < partitions.size(); idx++) {
 	node node_0 = partitions.at(idx).begin()->first;
@@ -479,7 +467,6 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	    auto search = node_set.find(node_1);
 	    if (search != node_set.end()) {
 		add_node(partitions.at(idx), node_1);
-		//add_edge(partitions.at(idx), node_0, node_1);
 		
 		// neighbors that are in the partition need their
 		// edges
