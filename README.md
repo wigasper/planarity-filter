@@ -1,8 +1,8 @@
-![](https://github.com/wigasper/planarity-filter/workflows/build/badge.svg) ![](https://github.com/wigasper/planarity-filter/workflows/deploy/badge.svg)
+![](https://github.com/wigasper/planarityfilter/workflows/build/badge.svg) ![](https://github.com/wigasper/planarityfilter/workflows/deploy/badge.svg)
 
-# planarity-filter
+# planarityfilter
 
-`planarity-filter` provides an algorithm for obtaining planar-approximations of 
+`planarityfilter` provides an algorithm for obtaining planar-approximations of 
 large graphs through edge addition via graphlets. Currently only undirected, unweighted
 graphs are supported.
 
@@ -16,8 +16,8 @@ open an issue and I will add this to the CD.
 To build:
 
 ```bash
-git clone git@github.com:wigasper/planarity-filter.git
-cd planarity-filter
+git clone git@github.com:wigasper/planarityfilter.git
+cd planarityfilter
 mkdir build && cd build
 cmake ..
 make
