@@ -13,6 +13,8 @@ this dependency can be eliminated --- just open an issue.
 A Linux binary is included in the releases, if additional target OSes are needed please just 
 open an issue and I will add this to the CD.
 
+This work builds on the code from [Nathan Cornelius](https://github.com/ndcornelius/PlanarSubgraphApproximationAlgorithm), who is a co-author, and is used with permission.
+
 To build:
 
 ```bash
