@@ -545,7 +545,9 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	    }	    
 	}
     }
-    
+   
+    num_nodes = node_set.size(); 
+
     // start adding nodes to partitions with BFS
     for (size_t idx = 0; idx < partitions.size(); idx++) {
 	size_t num_nodes_added = 0;
