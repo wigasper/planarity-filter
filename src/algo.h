@@ -322,7 +322,7 @@ void add_diamonds_alt(const node x, const adjacency_list &adj_list,
 			    out.push_back(z);
 			    out.push_back(y);
 			    out.push_back(z);
-			    out.push_back(x);
+			    out.push_back(y);
 			    out.push_back(w);
 			    out.push_back(z);
 			    out.push_back(w);
@@ -649,6 +649,6 @@ adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
     if (components.size() > 1) {
         connect_components(out, components, adj_list);
     }
-
+    
     return out;
 }
