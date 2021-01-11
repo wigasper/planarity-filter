@@ -499,6 +499,11 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
 std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list, 
 	const size_t num_partitions) {
     std::vector<adjacency_list> partitions;
+    
+    if (num_partitions == 1) {
+	partitions.push_back(adj_list);
+	return partitions;
+    }
 
     std::unordered_set<node> node_set;
     size_t num_nodes = node_set.size();
