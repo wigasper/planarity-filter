@@ -83,12 +83,16 @@ int main(int argc, char *argv[]) {
     std::vector<int> thread_nums {1, 2, 4, 8, 16, 32, 64};
 
     for (int threads : thread_nums) {
-	auto start = std::chrono::high_resolution_clock::now();
-	adjacency_list result_graph = algo_routine(input_graph, threads);
-	auto finish = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed = finish - start;
-	BOOST_LOG_TRIVIAL(info) << "$" << threads << "," << elapsed.count() <<"$";	
-
+	for (size_t rep = 0; rep < num_replicates; rep++) {
+	    auto start = std::chrono::high_resolution_clock::now();
+	    adjacency_list result_graph = algo_routine(input_graph, threads);
+	    auto finish = std::chrono::high_resolution_clock::now();
+	    std::chrono::duration<double> elapsed = finish - start;
+	    if (rep >= (num_replicates - 10)) {   
+		BOOST_LOG_TRIVIAL(info) << "$" << threads << "," << elapsed.count() <<"$";	
+	
+	    }
+	}
     }
     BOOST_LOG_TRIVIAL(info) << "########################"
     adjacency_list result_graph = algo_routine(input_graph, num_threads);
