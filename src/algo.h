@@ -470,6 +470,8 @@ std::vector<node> propagate_from_x(const size_t x_node, const adjacency_list &ad
     for (auto &[key_node, _adjs] : adj_list) {
         nu.insert(key_node);
     }
+    
+    nu.erase(x_node);
 
     while (!nu.empty()) {
 	if (active.empty()) {
