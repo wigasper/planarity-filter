@@ -644,8 +644,6 @@ adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
 
     }
     
-    dedup(out);
-
     std::vector<std::vector<node>> components = get_components(out);
     
     if (components.size() > 1) {

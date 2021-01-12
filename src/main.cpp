@@ -15,7 +15,7 @@
 
 // Initializes the logger
 void log_init() {
-      std::string log_format = "[%TimeStamp%] [%Severity%] [%Message%]";
+      std::string log_format = "[%TimeStamp%] [%Message%]";
       std::string log_path = "planarity_filter.log";
       boost::log::add_file_log(log_path, boost::log::keywords::format = log_format,
                                boost::log::keywords::open_mode = std::ios_base::app);
@@ -27,16 +27,14 @@ void log_init() {
 int main(int argc, char *argv[]) {
     log_init();
     
-    int num_threads = 1;
-    
+    size_t num_replicates = 50;
+
     // Get args
     namespace po = boost::program_options;
 
     po::options_description desc("Arguments");
     desc.add_options()("help,h", "display help message")
-        ("input,i", po::value<std::string>()->required(), "input file path")
-        ("output,o", po::value<std::string>()->required(), "output file path")
-	("threads,t", po::value<int>(&num_threads), "number of threads to use");
+        ("input,i", po::value<std::string>()->required(), "input file path");
 
     po::variables_map var_map;
 
@@ -88,6 +86,8 @@ int main(int argc, char *argv[]) {
     adjacency_list result_graph = algo_routine(input_graph, num_threads);
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    
+    dedup(result_graph);
 
     if (!boyer_myrvold_test(result_graph)) {
         BOOST_LOG_TRIVIAL(error) << "Error: the result graph is not planar";
