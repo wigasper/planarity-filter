@@ -88,6 +88,8 @@ int main(int argc, char *argv[]) {
     adjacency_list result_graph = algo_routine(input_graph, num_threads);
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
+    
+    dedup(result_graph);
 
     if (!boyer_myrvold_test(result_graph)) {
         BOOST_LOG_TRIVIAL(error) << "Error: the result graph is not planar";
