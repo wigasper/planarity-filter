@@ -107,11 +107,55 @@ load_result load_edge_list(const std::string file_path) {
     return std::make_tuple(edge_list_out, node_ids, node_ids_rev);
 }
 
+adjacency_list load_adj_list(const std::string file_path, const size_t num_nodes) {
+    adjacency_list adj_list;
+    adj_list.reserve(num_nodes);
+
+    std::fstream file_in;
+
+    file_in.open(file_path, std::ios::in);
+
+    std::string line;
+
+    while (getline(file_in, line)) {
+	std::vector <std::string> elements = parse_line(line);
+
+	if (elements.size() > 1) {
+	    node node_0 = (size_t) std::stoull(elements.at(0));
+	    node node_1 = (size_t) std::stoull(elements.at(1));
+	    if (node_0 != node_1) {
+		auto search = adj_list.find(node_0);
+		
+		if (search == adj_list.end()) {
+		    std::vector<node> this_vec {node_1};
+		    adj_list.insert({node_0, this_vec});
+		} else {
+		    adj_list.at(node_0).push_back(node_1);
+		}
+
+		search = adj_list.find(node_1);
+		if (search == adj_list.end()) {
+		    std::vector<node> this_vec {node_0};
+		    adj_list.insert({node_1, this_vec});
+		} else {
+		    adj_list.at(node_1).push_back(node_0);
+		}
+	    }
+	}
+    }
+
+    file_in.close();
+
+    return adj_list;
+}
+
 // Adds a node to the adjacency_list
-void add_node(adjacency_list &adj_list, const node key_node) {
+void add_node(adjacency_list &adj_list, const node key_node, const size_t adjs_size) {
     auto search = adj_list.find(key_node);
     // Avoid erasing the adjacents if the node is already in the map
     if (search == adj_list.end()) {
+	std::vector<node> this_vec;
+	this_vec.reserve(adjs_size);
         adj_list.insert({key_node, std::vector<node> {}});
     }
 

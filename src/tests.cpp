@@ -15,8 +15,8 @@ TEST(parse_line_tests, parse_0) {
 
 TEST(add_node_tests, add_node_0) {
     adjacency_list g;
-    add_node(g, 3);
-    add_node(g, 10);
+    add_node(g, 3, 5);
+    add_node(g, 10, 5);
 
     auto three_search = g.find(3);
     ASSERT_NE(three_search, g.end());

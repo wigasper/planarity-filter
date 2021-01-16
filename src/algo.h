@@ -508,7 +508,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
     }
 
     std::unordered_set<node> node_set;
-    size_t num_nodes = node_set.size();
+    node_set.reserve(adj_list.size());
 
     for (auto &[key_node, _adjs] : adj_list) {
 	node_set.insert(key_node);
@@ -522,7 +522,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	std::advance(iter, distribution(generator));
 
 	adjacency_list new_adj_list;
-	add_node(new_adj_list, *iter);
+	add_node(new_adj_list, *iter, adj_list.at(*iter).size());
 	node_set.erase(iter);
 	partitions.push_back(new_adj_list);
     } 
@@ -533,7 +533,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	for (node node_1 : adj_list.at(node_0)) {
 	    auto search = node_set.find(node_1);
 	    if (search != node_set.end()) {
-		add_node(partitions.at(idx), node_1);
+		add_node(partitions.at(idx), node_1, adj_list.at(node_1).size());
 		
 		// neighbors that are in the partition need their
 		// edges
@@ -548,7 +548,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	}
     }
    
-    num_nodes = node_set.size(); 
+    size_t num_nodes = node_set.size(); 
 
     // start adding nodes to partitions with BFS
     for (size_t idx = 0; idx < partitions.size(); idx++) {
@@ -572,7 +572,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 		    for (node node_0 : adjs) {
 			auto search = node_set.find(node_0);
 			if (search != node_set.end()) {
-			    add_node(partitions.at(idx), node_0);
+			    add_node(partitions.at(idx), node_0, adj_list.at(node_0).size());
 			    
 			    search = visited.find(node_0);
 			    if (search == visited.end()) {
@@ -605,7 +605,7 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 	}
 
 	node this_node = *node_set.begin();
-	add_node(partitions.at(idx), this_node);
+	add_node(partitions.at(idx), this_node, adj_list.at(this_node).size());
 	for (node node_1 : adj_list.at(this_node)) {
 	    auto search = partitions.at(idx).find(node_1);
 	    if (search != partitions.at(idx).end()) {
@@ -624,9 +624,10 @@ std::vector<adjacency_list> partition_nodes(const adjacency_list &adj_list,
 // degree node in each partition. Connects components at the end, if possible
 adjacency_list algo_routine(const adjacency_list &adj_list, const int threads) {
     adjacency_list out;
+    out.reserve(adj_list.size());
 
-    for (auto &[key_node, _adjs] : adj_list) {
-        add_node(out, key_node);
+    for (auto &[key_node, adjs] : adj_list) {
+        add_node(out, key_node, adjs.size());
     }
     std::vector<adjacency_list> partitions = partition_nodes(adj_list, threads);
 
