@@ -87,15 +87,15 @@ int main(int argc, char *argv[]) {
 	load_result lr = load_edge_list(var_map["input"].as<std::string>());
 	input_graph = to_adj_list(std::get<0>(lr));
 	node_labels = std::get<2>(lr);
-    }
     
-    BOOST_LOG_TRIVIAL(info) << "Checking to see if graph is already planar";
+    
+	BOOST_LOG_TRIVIAL(info) << "Checking to see if graph is already planar";
 
-    if (boyer_myrvold_test(input_graph)) {
-        BOOST_LOG_TRIVIAL(info) << "The provided graph is already planar";
-        exit(EXIT_SUCCESS);
+	if (boyer_myrvold_test(input_graph)) {
+	    BOOST_LOG_TRIVIAL(info) << "The provided graph is already planar";
+	    exit(EXIT_SUCCESS);
+	}
     }
-    
     // dedup input graph
     dedup(input_graph);
 
@@ -106,12 +106,13 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> elapsed = finish - start;
     
     dedup(result_graph);
-
-    if (!boyer_myrvold_test(result_graph)) {
-        BOOST_LOG_TRIVIAL(error) << "Error: the result graph is not planar";
-        exit(EXIT_FAILURE);
+    
+    if (!large_graph) {
+	if (!boyer_myrvold_test(result_graph)) {
+	    BOOST_LOG_TRIVIAL(error) << "Error: the result graph is not planar";
+	    exit(EXIT_FAILURE);
+	}
     }
-
     size_t input_n_edges = num_edges(input_graph);
     size_t result_n_edges = num_edges(result_graph);
 
